@@ -1,0 +1,37 @@
+{
+  "name": "claude-sessions",
+  "version": "1.0.0",
+  "description": "Interactive session manager for Claude Code — TUI picker, search, AI summaries, session restore",
+  "type": "module",
+  "bin": {
+    "claude-sessions": "./bin/cli.mjs",
+    "cs": "./bin/cli.mjs"
+  },
+  "scripts": {
+    "postinstall": "node ./src/install.mjs --auto"
+  },
+  "keywords": [
+    "claude",
+    "claude-code",
+    "session-manager",
+    "tui",
+    "cli",
+    "ai"
+  ],
+  "author": "tradchenko",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tradchenko/claude-sessions"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "claude-commands/",
+    "README.md",
+    "LICENSE"
+  ]
+}
