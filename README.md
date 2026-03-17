@@ -20,14 +20,14 @@ Interactive session manager for [Claude Code](https://docs.anthropic.com/en/docs
 ## Quick start
 
 ```bash
-npm install -g claude-sessions
+npm install -g @tradchenko/claude-sessions
 claude-sessions install
 ```
 
 Or try instantly:
 
 ```bash
-npx claude-sessions
+npx @tradchenko/claude-sessions
 ```
 
 ## Usage
@@ -81,7 +81,7 @@ claude-sessions restore <session-id>    # restore from JSONL when --resume fails
 ### npm (recommended)
 
 ```bash
-npm install -g claude-sessions
+npm install -g @tradchenko/claude-sessions
 claude-sessions install
 ```
 
@@ -182,7 +182,7 @@ Tests use Node.js built-in test runner (`node:test`) — no test dependencies re
 
 ```bash
 claude-sessions uninstall    # remove slash commands and hooks
-npm uninstall -g claude-sessions
+npm uninstall -g @tradchenko/claude-sessions
 ```
 
 Your `session-index.json` (AI summaries) is preserved.
