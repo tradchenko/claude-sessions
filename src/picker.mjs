@@ -67,7 +67,7 @@ class SessionPicker {
       const w = this.cols;
 
       moveCursor(1, 1);
-      process.stdout.write(`${BOLD}  Claude Code Sessions${RESET} ${DIM}(${this.filtered.length}/${this.allSessions.length})${RESET}`);
+      process.stdout.write(`${BOLD}  ${t('pickerTitle')}${RESET} ${DIM}(${this.filtered.length}/${this.allSessions.length})${RESET}`);
 
       moveCursor(2, 1);
       process.stdout.write(`${DIM}${'─'.repeat(Math.min(w, 100))}${RESET}`);

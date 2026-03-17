@@ -94,6 +94,38 @@ const translations = {
       removedHook: 'Removed Stop hook',
       indexPreserved: (f) => `session-index.json preserved: ${f}`,
       removalComplete: 'Removal complete.',
+      // Config errors
+      claudeDirNotFound: 'Claude Code directory not found.',
+      checked: (p) => `Checked: ${p}`,
+      installClaudeCode: 'Make sure Claude Code is installed: https://docs.anthropic.com/en/docs/claude-code',
+      historyNotFound: 'history.jsonl file not found.',
+      runClaudeOnce: 'Run Claude Code at least once to create the session history.',
+      // Install details
+      cmdSessionsDesc: '/sessions — session list',
+      cmdSummarizeDesc: '/session-summarize — AI summaries',
+      saveSummaryCopied: 'save-summary.mjs copied',
+      stopHookInstalled: 'Stop hook for auto-saving metadata',
+      saveSessionSummaryCopied: 'save-session-summary.mjs copied',
+      usagePicker: 'claude-sessions     — interactive TUI picker (arrows + search)',
+      usageAlias: 'cs                  — short alias',
+      usageQuick: 'cs 3                — quick launch session #3',
+      usageSearch: 'cs --search miniapp — search by content',
+      usageSessions: '/sessions           — inside Claude Code',
+      usageSummarize: '/session-summarize  — AI summaries inside Claude Code',
+      // Picker
+      pickerTitle: 'Claude Code Sessions',
+      // Save summary
+      saveSummaryUsage: 'Usage: node save-summary.mjs --session ID --summary "text"',
+      summarySaved: (id, summary) => `Summary saved: [${id}] ${summary}`,
+      // Restore markdown
+      restoredSessionTitle: 'Restored session',
+      projectLabel: 'Project',
+      idLabel: 'ID',
+      restoredNote: 'Original session is unavailable via --resume, context restored from JSONL.',
+      conversationHistory: 'Conversation history',
+      userLabel: 'User',
+      assistantLabel: 'Assistant',
+      restoredFooter: 'Above is the restored history. Continue working with this context.',
    },
    ru: {
       today: 'сегодня',
@@ -174,6 +206,38 @@ const translations = {
       removedHook: 'Удалён Stop hook',
       indexPreserved: (f) => `session-index.json сохранён: ${f}`,
       removalComplete: 'Удаление завершено.',
+      // Config errors
+      claudeDirNotFound: 'Директория Claude Code не найдена.',
+      checked: (p) => `Проверено: ${p}`,
+      installClaudeCode: 'Убедись что Claude Code установлен: https://docs.anthropic.com/en/docs/claude-code',
+      historyNotFound: 'Файл history.jsonl не найден.',
+      runClaudeOnce: 'Запусти Claude Code хотя бы один раз чтобы создать историю сессий.',
+      // Install details
+      cmdSessionsDesc: '/sessions — список сессий',
+      cmdSummarizeDesc: '/session-summarize — AI-резюме',
+      saveSummaryCopied: 'save-summary.mjs скопирован',
+      stopHookInstalled: 'Stop hook для автосохранения метаданных',
+      saveSessionSummaryCopied: 'save-session-summary.mjs скопирован',
+      usagePicker: 'claude-sessions     — интерактивный TUI пикер (стрелки + поиск)',
+      usageAlias: 'cs                  — короткий алиас',
+      usageQuick: 'cs 3                — быстрый запуск сессии #3',
+      usageSearch: 'cs --search miniapp — поиск по содержимому',
+      usageSessions: '/sessions           — внутри Claude Code',
+      usageSummarize: '/session-summarize  — AI-резюме внутри Claude Code',
+      // Picker
+      pickerTitle: 'Сессии Claude Code',
+      // Save summary
+      saveSummaryUsage: 'Использование: node save-summary.mjs --session ID --summary "текст"',
+      summarySaved: (id, summary) => `Резюме сохранено: [${id}] ${summary}`,
+      // Restore markdown
+      restoredSessionTitle: 'Восстановленная сессия',
+      projectLabel: 'Проект',
+      idLabel: 'ID',
+      restoredNote: 'Оригинальная сессия недоступна через --resume, контекст восстановлен из JSONL.',
+      conversationHistory: 'История переписки',
+      userLabel: 'Пользователь',
+      assistantLabel: 'Ассистент',
+      restoredFooter: 'Выше — восстановленная история. Продолжай работу с учётом этого контекста.',
    },
 };
 

@@ -61,16 +61,16 @@ export const SCRIPTS_DIR = join(CLAUDE_DIR, 'scripts');
  */
 export function ensureClaudeDir() {
    if (!existsSync(CLAUDE_DIR)) {
-      console.error('❌ Claude Code directory not found.');
-      console.error(`   Checked: ${CLAUDE_DIR}`);
-      console.error('   Make sure Claude Code is installed: https://docs.anthropic.com/en/docs/claude-code');
+      console.error('❌ ' + t('claudeDirNotFound'));
+      console.error('   ' + t('checked', CLAUDE_DIR));
+      console.error('   ' + t('installClaudeCode'));
       process.exit(1);
    }
 
    if (!existsSync(HISTORY_FILE)) {
-      console.error('❌ history.jsonl file not found.');
-      console.error(`   Checked: ${HISTORY_FILE}`);
-      console.error('   Run Claude Code at least once to create the session history.');
+      console.error('❌ ' + t('historyNotFound'));
+      console.error('   ' + t('checked', HISTORY_FILE));
+      console.error('   ' + t('runClaudeOnce'));
       process.exit(1);
    }
 

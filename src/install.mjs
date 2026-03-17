@@ -20,8 +20,8 @@ const isAuto = process.argv.includes('--auto');
  */
 function installCommands() {
    const commands = [
-      { file: 'sessions.md', desc: '/sessions — session list' },
-      { file: 'session-summarize.md', desc: '/session-summarize — AI summaries' },
+      { file: 'sessions.md', desc: t('cmdSessionsDesc') },
+      { file: 'session-summarize.md', desc: t('cmdSummarizeDesc') },
    ];
 
    for (const cmd of commands) {
@@ -49,7 +49,7 @@ function installScripts() {
 
    if (existsSync(saveSummary) && !existsSync(dest)) {
       copyFileSync(saveSummary, dest);
-      if (!isAuto) console.log('   ✅ save-summary.mjs copied');
+      if (!isAuto) console.log(`   ✅ ${t('saveSummaryCopied')}`);
    }
 }
 
@@ -88,7 +88,7 @@ function installHook() {
       });
 
       writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-      if (!isAuto) console.log('   ✅ Stop hook for auto-saving metadata');
+      if (!isAuto) console.log(`   ✅ ${t('stopHookInstalled')}`);
    } catch (e) {
       if (!isAuto) console.log(`   ⚠️  ${t('failedSettings', e.message)}`);
    }
@@ -103,7 +103,7 @@ function installSaveHookScript() {
 
    if (!existsSync(dest) && existsSync(src)) {
       copyFileSync(src, dest);
-      if (!isAuto) console.log('   ✅ save-session-summary.mjs copied');
+      if (!isAuto) console.log(`   ✅ ${t('saveSessionSummaryCopied')}`);
    }
 }
 
@@ -212,12 +212,12 @@ export default async function install() {
 
    console.log(`\n✅ ${t('installComplete')}\n`);
    console.log(`${t('usage')}`);
-   console.log('   claude-sessions     — interactive TUI picker (arrows + search)');
-   console.log('   cs                  — short alias');
-   console.log('   cs 3                — quick launch session #3');
-   console.log('   cs --search miniapp — search by content');
-   console.log('   /sessions           — inside Claude Code');
-   console.log('   /session-summarize  — AI summaries inside Claude Code\n');
+   console.log(`   ${t('usagePicker')}`);
+   console.log(`   ${t('usageAlias')}`);
+   console.log(`   ${t('usageQuick')}`);
+   console.log(`   ${t('usageSearch')}`);
+   console.log(`   ${t('usageSessions')}`);
+   console.log(`   ${t('usageSummarize')}\n`);
 }
 
 // Support direct invocation from postinstall

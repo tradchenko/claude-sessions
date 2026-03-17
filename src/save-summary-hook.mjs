@@ -8,6 +8,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
+import { t } from './i18n.mjs';
 
 const SESSION_INDEX = join(homedir(), '.claude', 'session-index.json');
 
@@ -26,7 +27,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (!sessionId || !summary) {
-   console.error('Usage: node save-summary.mjs --session ID --summary "text"');
+   console.error(t('saveSummaryUsage'));
    process.exit(1);
 }
 
@@ -61,4 +62,4 @@ if (entries.length > 200) {
 }
 
 writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
-console.log(`✅ Summary saved: [${sessionId.slice(0, 8)}] ${summary}`);
+console.log('✅ ' + t('summarySaved', sessionId.slice(0, 8), summary));

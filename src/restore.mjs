@@ -73,18 +73,18 @@ function extractConversation(filePath, maxMessages = 50) {
 function formatAsMarkdown(messages, projectDir, sessionId) {
    const projectName = projectDir.replace(/-/g, '/').replace(/^\//, '');
 
-   let md = `# Restored session\n\n`;
-   md += `- **Project:** ${projectName}\n`;
-   md += `- **ID:** ${sessionId}\n`;
-   md += `- **Note:** Original session is unavailable via --resume, context restored from JSONL.\n\n`;
+   let md = `# ${t('restoredSessionTitle')}\n\n`;
+   md += `- **${t('projectLabel')}:** ${projectName}\n`;
+   md += `- **${t('idLabel')}:** ${sessionId}\n`;
+   md += `- **Note:** ${t('restoredNote')}\n\n`;
    md += `---\n\n`;
-   md += `## Conversation history\n\n`;
+   md += `## ${t('conversationHistory')}\n\n`;
 
    for (const msg of messages) {
-      md += msg.role === 'user' ? `### User:\n${msg.text}\n\n` : `### Assistant:\n${msg.text}\n\n`;
+      md += msg.role === 'user' ? `### ${t('userLabel')}:\n${msg.text}\n\n` : `### ${t('assistantLabel')}:\n${msg.text}\n\n`;
    }
 
-   md += `---\n\nAbove is the restored history. Continue working with this context.\n`;
+   md += `---\n\n${t('restoredFooter')}\n`;
    return md;
 }
 

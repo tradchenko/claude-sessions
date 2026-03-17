@@ -285,7 +285,8 @@ describe('edge cases', () => {
       const emptyDir = join(tmpdir(), `claude-sessions-empty-${Date.now()}`);
       mkdirSync(emptyDir, { recursive: true });
       const output = runCli('list', { HOME: emptyDir });
-      assert.ok(output.includes('not found') || output.includes('error') || output.length === 0);
+      // Should not crash — may show error in any language (i18n)
+      assert.ok(output.includes('❌') || output.includes('not found') || output.includes('не найден') || output.length === 0);
       rmSync(emptyDir, { recursive: true, force: true });
    });
 
