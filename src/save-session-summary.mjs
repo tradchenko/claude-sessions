@@ -12,7 +12,8 @@ const SESSION_INDEX = join(homedir(), '.claude', 'session-index.json');
 
 let input = '';
 try {
-   input = readFileSync('/dev/stdin', 'utf8');
+   // /dev/stdin не работает на Windows, используем fd 0
+   input = readFileSync(process.stdin.fd, 'utf8');
 } catch {
    process.exit(0);
 }

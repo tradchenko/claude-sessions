@@ -3,7 +3,7 @@
  * Работает в Warp, iTerm2, Terminal.app, VS Code и любых терминалах.
  */
 
-import { existsSync } from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { createInterface } from 'readline';
@@ -234,57 +234,24 @@ export default async function picker(args = []) {
          p.confirmDelete = null;
 
          if (key === '\r' || key === '\n' || key === 'y' || key === 'Y' || key === 'д' || key === 'Д') {
-            // Удаляем через встроенный модуль
-            import('./delete.mjs').then(({ default: del }) => {
-               // Тихое удаление (перенаправляем вывод)
-               const { readFileSync, writeFileSync, readdirSync, unlinkSync } = require('fs');
-               const { HISTORY_FILE, SESSION_INDEX, PROJECTS_DIR } = require('./config.mjs');
-
-               // Inline удаление для TUI (без вывода)
-               try {
-                  const hist = readFileSync(join(CLAUDE_DIR, '..', '.claude', 'history.jsonl'), 'utf8');
-               } catch {}
-
-               p.allSessions = p.allSessions.filter((x) => x.id !== s.id);
-               p.filter();
-               if (p.selected >= p.filtered.length) {
-                  p.selected = Math.max(0, p.filtered.length - 1);
-               }
-               p.scrollToSelected();
-               p.message = `${GREEN}✅ Сессия удалена${RESET}`;
-               p.render();
-               setTimeout(() => {
-                  p.message = '';
-                  p.render();
-               }, 1500);
-            });
-
-            // Удаляем через shell скрипт (если есть) или inline
+            // Inline удаление — без require(), без shell
             try {
-               if (existsSync(deleteScript)) {
-                  execSync(`"${deleteScript}" "${s.id}"`, { stdio: 'pipe' });
-               } else {
-                  // Inline удаление
-                  const { readFileSync: rf, writeFileSync: wf, readdirSync: rd, unlinkSync: ul } = await_fs();
-                  // history.jsonl
-                  const histPath = join(CLAUDE_DIR, 'history.jsonl');
-                  if (existsSync(histPath)) {
-                     const content = rf(histPath, 'utf8');
-                     wf(
-                        histPath,
-                        content
-                           .split('\n')
-                           .filter((l) => !l.includes(`"sessionId":"${s.id}"`))
-                           .join('\n'),
-                     );
-                  }
-                  // session-index.json
-                  const idxPath = join(CLAUDE_DIR, 'session-index.json');
-                  if (existsSync(idxPath)) {
-                     const idx = JSON.parse(rf(idxPath, 'utf8'));
-                     delete idx[s.id];
-                     wf(idxPath, JSON.stringify(idx, null, 2));
-                  }
+               const histPath = join(CLAUDE_DIR, 'history.jsonl');
+               if (existsSync(histPath)) {
+                  const content = readFileSync(histPath, 'utf8');
+                  writeFileSync(
+                     histPath,
+                     content
+                        .split('\n')
+                        .filter((l) => !l.includes(`"sessionId":"${s.id}"`))
+                        .join('\n'),
+                  );
+               }
+               const idxPath = join(CLAUDE_DIR, 'session-index.json');
+               if (existsSync(idxPath)) {
+                  const idx = JSON.parse(readFileSync(idxPath, 'utf8'));
+                  delete idx[s.id];
+                  writeFileSync(idxPath, JSON.stringify(idx, null, 2));
                }
             } catch {}
 
@@ -430,6 +397,3 @@ export default async function picker(args = []) {
    });
 }
 
-function await_fs() {
-   return require('fs');
-}

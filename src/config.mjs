@@ -3,9 +3,10 @@
  * Кроссплатформенная поддержка: macOS, Linux, Windows (WSL).
  */
 
-import { join } from 'path';
+import { join, sep } from 'path';
 import { homedir, platform } from 'os';
 import { existsSync, mkdirSync } from 'fs';
+import { execSync } from 'child_process';
 
 export const HOME = homedir();
 export const PLATFORM = platform();
@@ -82,18 +83,12 @@ export function ensureClaudeDir() {
  * Определяет доступен ли claude CLI
  */
 export function findClaudeCli() {
-   const { execSync } = await_child_process();
    try {
       const cmd = PLATFORM === 'win32' ? 'where claude' : 'which claude';
       return execSync(cmd, { encoding: 'utf8' }).trim().split('\n')[0];
    } catch {
       return null;
    }
-}
-
-function await_child_process() {
-   // Ленивый импорт для ускорения запуска
-   return require('child_process');
 }
 
 /**
@@ -116,6 +111,7 @@ export function formatDate(ts) {
  */
 export function shortProjectName(projectPath) {
    if (!projectPath) return 'unknown';
-   const parts = projectPath.split('/');
+   // Поддержка и / и \ (Windows)
+   const parts = projectPath.split(/[/\\]/);
    return parts[parts.length - 1] || parts[parts.length - 2] || projectPath;
 }

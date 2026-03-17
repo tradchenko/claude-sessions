@@ -2,8 +2,7 @@
  * Загрузка и обработка данных сессий
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { createReadStream } from 'fs';
+import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { HISTORY_FILE, SESSION_INDEX, formatDate, shortProjectName } from './config.mjs';
 
@@ -106,7 +105,6 @@ export function readIndex() {
 }
 
 export function writeIndex(index) {
-   const { writeFileSync } = await_import_fs();
    // Ограничиваем до 200 записей
    const entries = Object.entries(index);
    if (entries.length > 200) {
@@ -114,8 +112,4 @@ export function writeIndex(index) {
       index = Object.fromEntries(entries.slice(0, 200));
    }
    writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
-}
-
-function await_import_fs() {
-   return require('fs');
 }

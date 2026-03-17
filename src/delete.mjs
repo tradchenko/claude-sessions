@@ -2,8 +2,7 @@
  * Удаление сессии
  */
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
-import { readdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { HISTORY_FILE, SESSION_INDEX, PROJECTS_DIR } from './config.mjs';
 
