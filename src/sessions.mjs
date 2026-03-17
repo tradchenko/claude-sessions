@@ -1,13 +1,14 @@
 /**
- * Загрузка и обработка данных сессий
+ * Loading and processing session data
  */
 
 import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { HISTORY_FILE, SESSION_INDEX, formatDate, shortProjectName } from './config.mjs';
+import { t } from './i18n.mjs';
 
 /**
- * Загружает и группирует сессии из history.jsonl
+ * Loads and groups sessions from history.jsonl
  */
 export async function loadSessions({ projectFilter, searchQuery, limit = 100 } = {}) {
    if (!existsSync(HISTORY_FILE)) return [];
@@ -52,7 +53,7 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
       } catch {}
    }
 
-   // Загружаем AI-резюме
+   // Load AI summaries
    let index = {};
    if (existsSync(SESSION_INDEX)) {
       try {
@@ -62,7 +63,7 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
 
    let sorted = Array.from(sessionsMap.values()).sort((a, b) => b.lastTs - a.lastTs);
 
-   // Фильтры
+   // Filters
    if (projectFilter) {
       const pf = projectFilter.toLowerCase();
       sorted = sorted.filter((s) => shortProjectName(s.project).toLowerCase().includes(pf));
@@ -74,7 +75,7 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
 
    return sorted.slice(0, limit).map((s) => {
       const project = shortProjectName(s.project);
-      const summary = (index[s.id]?.summary || s.msg || '(нет описания)').replace(/\n/g, ' ').trim().slice(0, 65);
+      const summary = (index[s.id]?.summary || s.msg || t('noDescription')).replace(/\n/g, ' ').trim().slice(0, 65);
       const dateStr = formatDate(s.lastTs);
       const cnt = s.count > 1 ? ` (${s.count})` : '';
 
@@ -93,7 +94,7 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
 }
 
 /**
- * Загружает/сохраняет индекс резюме
+ * Loads/saves summary index
  */
 export function readIndex() {
    if (!existsSync(SESSION_INDEX)) return {};
@@ -105,7 +106,7 @@ export function readIndex() {
 }
 
 export function writeIndex(index) {
-   // Ограничиваем до 200 записей
+   // Limit to 200 entries
    const entries = Object.entries(index);
    if (entries.length > 200) {
       entries.sort((a, b) => (b[1].lastActive || 0) - (a[1].lastActive || 0));

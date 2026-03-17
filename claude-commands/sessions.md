@@ -1,26 +1,26 @@
 ---
 allowed-tools:
   - Bash
-description: "Показать список сессий, поиск по содержимому"
-argument-hint: "[--limit N] [--project имя] [--search текст] [--all]"
+description: "Show session list, search by content"
+argument-hint: "[--limit N] [--project name] [--search text] [--all]"
 ---
 
-# Список сессий Claude Code
+# Claude Code Session List
 
-Запусти команду для вывода списка сессий:
+Run the command to display sessions:
 
 ```bash
 claude-sessions list $ARGUMENTS
 ```
 
-Покажи результат как есть. Если пользователь хочет возобновить сессию:
+Show the result as is. If the user wants to resume a session:
 
-1. Выйти из текущей (Ctrl+C)
-2. Выполнить `claude --resume <id>` в терминале
+1. Exit the current one (Ctrl+C)
+2. Run `claude --resume <id>` in the terminal
 
-Аргументы:
+Arguments:
 
-- `--project имя` — фильтр по проекту
-- `--search текст` — поиск по содержимому
-- `--limit N` — количество (по умолчанию 20)
-- `--all` — все сессии
+- `--project name` — filter by project
+- `--search text` — search by content
+- `--limit N` — count (default 20)
+- `--all` — all sessions

@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 /**
- * Сохраняет AI-резюме сессии в session-index.json.
- * Использование: node save-summary.mjs --session ID --summary "текст"
+ * Saves AI summary for a session to session-index.json.
+ * Usage: node save-summary.mjs --session ID --summary "text"
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -26,7 +26,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (!sessionId || !summary) {
-   console.error('Использование: node save-summary.mjs --session ID --summary "текст"');
+   console.error('Usage: node save-summary.mjs --session ID --summary "text"');
    process.exit(1);
 }
 
@@ -39,7 +39,7 @@ if (existsSync(SESSION_INDEX)) {
    }
 }
 
-// Поиск полного ID по короткому
+// Find full ID by short ID
 if (sessionId.length < 36) {
    const fullId = Object.keys(index).find((k) => k.startsWith(sessionId));
    if (fullId) sessionId = fullId;
@@ -61,4 +61,4 @@ if (entries.length > 200) {
 }
 
 writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
-console.log(`✅ Резюме сохранено: [${sessionId.slice(0, 8)}] ${summary}`);
+console.log(`✅ Summary saved: [${sessionId.slice(0, 8)}] ${summary}`);

@@ -1,9 +1,10 @@
 /**
- * Текстовый вывод списка сессий (для /sessions в Claude Code)
+ * Text output of session list (for /sessions in Claude Code)
  */
 
 import { loadSessions } from './sessions.mjs';
 import { ensureClaudeDir } from './config.mjs';
+import { t } from './i18n.mjs';
 
 export default async function list(args = []) {
    ensureClaudeDir();
@@ -30,11 +31,11 @@ export default async function list(args = []) {
    const sessions = await loadSessions({ projectFilter, searchQuery, limit });
 
    if (sessions.length === 0) {
-      console.log('Сессий не найдено.');
+      console.log(t('noSessionsFound'));
       return;
    }
 
-   const title = searchQuery ? `Результаты поиска "${searchQuery}" (${sessions.length})` : `Последние сессии Claude Code (${sessions.length})`;
+   const title = searchQuery ? t('searchResults', searchQuery, sessions.length) : t('recentSessions', sessions.length);
 
    console.log(`\n📋 ${title}:\n`);
    console.log('─'.repeat(100));
@@ -42,7 +43,7 @@ export default async function list(args = []) {
    for (let i = 0; i < sessions.length; i++) {
       const s = sessions[i];
       const num = String(i + 1).padStart(2, ' ');
-      const msgCount = s.count > 1 ? ` (${s.count} сообщ.)` : '';
+      const msgCount = s.count > 1 ? ` ${t('msgs', s.count)}` : '';
 
       console.log(`${num}. [${s.dateStr}] 📁 ${s.project}${msgCount}`);
       console.log(`    💬 ${s.summary}`);
@@ -50,10 +51,10 @@ export default async function list(args = []) {
       console.log('─'.repeat(100));
    }
 
-   console.log('\n💡 Команды:');
-   console.log('   claude-sessions                    — интерактивный пикер');
-   console.log('   claude-sessions search <текст>     — поиск по содержимому');
-   console.log('   claude-sessions list --project X   — фильтр по проекту');
-   console.log('   claude-sessions list --limit 50    — показать больше');
-   console.log('   claude-sessions summarize          — AI-резюме\n');
+   console.log(`\n💡 ${t('commands')}`);
+   console.log(`   claude-sessions                    — ${t('interactivePicker')}`);
+   console.log(`   claude-sessions search <text>      — ${t('searchByContent')}`);
+   console.log(`   claude-sessions list --project X   — ${t('filterByProject')}`);
+   console.log(`   claude-sessions list --limit 50    — ${t('showMore')}`);
+   console.log(`   claude-sessions summarize          — ${t('aiSummaries')}\n`);
 }

@@ -1,25 +1,26 @@
 /**
- * Общие константы и утилиты.
- * Кроссплатформенная поддержка: macOS, Linux, Windows (WSL).
+ * Common constants and utilities.
+ * Cross-platform support: macOS, Linux, Windows (WSL).
  */
 
 import { join, sep } from 'path';
 import { homedir, platform } from 'os';
 import { existsSync, mkdirSync } from 'fs';
 import { execSync } from 'child_process';
+import { t, getLocale } from './i18n.mjs';
 
 export const HOME = homedir();
 export const PLATFORM = platform();
 
 /**
- * Определяем директорию Claude Code.
- * Claude Code хранит данные в:
+ * Resolve the Claude Code directory.
+ * Claude Code stores data in:
  *   - macOS/Linux: ~/.claude/
  *   - Windows (WSL): ~/.claude/
- *   - Windows (native): %APPDATA%/claude/ или %USERPROFILE%/.claude/
+ *   - Windows (native): %APPDATA%/claude/ or %USERPROFILE%/.claude/
  */
 function resolveClaudeDir() {
-   // Стандартный путь
+   // Standard path
    const standard = join(HOME, '.claude');
    if (existsSync(standard)) return standard;
 
@@ -42,7 +43,7 @@ function resolveClaudeDir() {
    const xdgPath = join(xdgConfig, 'claude');
    if (existsSync(xdgPath)) return xdgPath;
 
-   // По умолчанию — стандартный путь (создадим при install)
+   // Default — standard path (will be created during install)
    return standard;
 }
 
@@ -56,31 +57,31 @@ export const COMMANDS_DIR = join(CLAUDE_DIR, 'commands');
 export const SCRIPTS_DIR = join(CLAUDE_DIR, 'scripts');
 
 /**
- * Проверяет что Claude Code установлен и каталоги существуют
+ * Checks that Claude Code is installed and directories exist
  */
 export function ensureClaudeDir() {
    if (!existsSync(CLAUDE_DIR)) {
-      console.error('❌ Директория Claude Code не найдена.');
-      console.error(`   Проверено: ${CLAUDE_DIR}`);
-      console.error('   Убедись что Claude Code установлен: https://docs.anthropic.com/en/docs/claude-code');
+      console.error('❌ Claude Code directory not found.');
+      console.error(`   Checked: ${CLAUDE_DIR}`);
+      console.error('   Make sure Claude Code is installed: https://docs.anthropic.com/en/docs/claude-code');
       process.exit(1);
    }
 
    if (!existsSync(HISTORY_FILE)) {
-      console.error('❌ Файл history.jsonl не найден.');
-      console.error(`   Проверено: ${HISTORY_FILE}`);
-      console.error('   Запусти Claude Code хотя бы один раз чтобы создать историю сессий.');
+      console.error('❌ history.jsonl file not found.');
+      console.error(`   Checked: ${HISTORY_FILE}`);
+      console.error('   Run Claude Code at least once to create the session history.');
       process.exit(1);
    }
 
-   // Создаём необходимые директории
+   // Create necessary directories
    for (const dir of [COMMANDS_DIR, SCRIPTS_DIR]) {
       if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
    }
 }
 
 /**
- * Определяет доступен ли claude CLI
+ * Checks if claude CLI is available
  */
 export function findClaudeCli() {
    try {
@@ -92,26 +93,27 @@ export function findClaudeCli() {
 }
 
 /**
- * Форматирование даты
+ * Date formatting (locale-aware)
  */
 export function formatDate(ts) {
    const d = new Date(ts);
    const now = new Date();
    const days = Math.floor((now - d) / 86400000);
-   const time = d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+   const locale = getLocale();
+   const time = d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 
-   if (days === 0) return `сегодня ${time}`;
-   if (days === 1) return `вчера ${time}`;
-   if (days < 7) return `${days} дн. назад`;
-   return d.toLocaleDateString('ru-RU');
+   if (days === 0) return `${t('today')} ${time}`;
+   if (days === 1) return `${t('yesterday')} ${time}`;
+   if (days < 7) return t('daysAgo', days);
+   return d.toLocaleDateString(locale);
 }
 
 /**
- * Короткое имя проекта
+ * Short project name
  */
 export function shortProjectName(projectPath) {
    if (!projectPath) return 'unknown';
-   // Поддержка и / и \ (Windows)
+   // Support both / and \ (Windows)
    const parts = projectPath.split(/[/\\]/);
    return parts[parts.length - 1] || parts[parts.length - 2] || projectPath;
 }

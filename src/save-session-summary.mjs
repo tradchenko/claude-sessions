@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Hook-скрипт (Stop): сохраняет метаданные текущей сессии в session-index.json.
+ * Hook script (Stop): saves current session metadata to session-index.json.
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
@@ -12,7 +12,7 @@ const SESSION_INDEX = join(homedir(), '.claude', 'session-index.json');
 
 let input = '';
 try {
-   // /dev/stdin не работает на Windows, используем fd 0
+   // /dev/stdin doesn't work on Windows, using fd 0
    input = readFileSync(process.stdin.fd, 'utf8');
 } catch {
    process.exit(0);

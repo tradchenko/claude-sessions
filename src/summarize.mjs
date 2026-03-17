@@ -1,14 +1,15 @@
 /**
- * AI-суммаризация сессий без описания.
- * Извлекает данные и запускает claude для генерации резюме.
+ * AI summarization of sessions without descriptions.
+ * Extracts data and runs claude to generate summaries.
  */
 
-import { readFileSync, readdirSync, existsSync } from 'fs';
-import { createReadStream } from 'fs';
+import { readFileSync, readdirSync, existsSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { join, dirname } from 'path';
+import { execFileSync } from 'child_process';
+import { fileURLToPath } from 'url';
 import { HISTORY_FILE, PROJECTS_DIR, SESSION_INDEX, CLAUDE_DIR, ensureClaudeDir, findClaudeCli } from './config.mjs';
+import { t } from './i18n.mjs';
 
 const BAD_SUMMARIES = ['/mcp', '/exit', '/login', '/clear', '/chrome', 'sessions', '/terminal-setup', '/init', '/ide', '/config'];
 
@@ -78,7 +79,7 @@ export default async function summarize(args = []) {
       }
    }
 
-   // Загружаем индекс
+   // Load index
    let index = {};
    if (existsSync(SESSION_INDEX)) {
       try {
@@ -86,7 +87,7 @@ export default async function summarize(args = []) {
       } catch {}
    }
 
-   // Загружаем историю
+   // Load history
    const rl = createInterface({
       input: createReadStream(HISTORY_FILE, { encoding: 'utf8' }),
       crlfDelay: Infinity,
@@ -117,11 +118,11 @@ export default async function summarize(args = []) {
    sessions = sessions.slice(0, limit);
 
    if (sessions.length === 0) {
-      console.log('\n✅ Все сессии уже имеют осмысленные AI-резюме!\n');
+      console.log(`\n✅ ${t('allSummarized')}\n`);
       return;
    }
 
-   // Формируем данные для claude
+   // Prepare data for claude
    let sessionsData = `SESSIONS_START\n`;
    let count = 0;
 
@@ -129,52 +130,51 @@ export default async function summarize(args = []) {
       const messages = extractMessages(s.project, s.id);
       if (!messages) continue;
       const project = s.project.split('/').pop() || 'unknown';
-      const date = new Date(s.ts).toLocaleDateString('ru-RU');
+      const date = new Date(s.ts).toLocaleDateString('en-US');
       sessionsData += `---SESSION:${s.id}---\n`;
-      sessionsData += `Проект: ${project} | Дата: ${date}\n`;
+      sessionsData += `Project: ${project} | Date: ${date}\n`;
       messages.forEach((m, i) => (sessionsData += `${i + 1}. ${m}\n`));
       count++;
    }
    sessionsData += `SESSIONS_END`;
 
-   console.log(`\n📝 Найдено ${count} сессий для AI-анализа.\n`);
+   console.log(`\n📝 ${t('foundForAnalysis', count)}\n`);
 
-   // Проверяем наличие claude
+   // Check for claude
    const claudePath = findClaudeCli();
    if (!claudePath) {
-      console.error('❌ Claude CLI не найден. Установи: https://docs.anthropic.com/en/docs/claude-code');
-      console.log('\nДанные сессий:\n');
+      console.error(`❌ ${t('claudeNotInstalled')}`);
+      console.log(`\n${t('sessionData')}\n`);
       console.log(sessionsData);
       return;
    }
 
-   // Определяем путь к save-summary скрипту
+   // Determine path to save-summary script
    const saveSummaryPath = join(CLAUDE_DIR, 'scripts', 'save-summary.mjs');
-   // Если скрипт не установлен — используем встроенный
-   const saveCmd = existsSync(saveSummaryPath)
-      ? `node ${saveSummaryPath}`
-      : `node ${join(new URL('.', import.meta.url).pathname, 'save-summary-inline.mjs')}`;
+   const __dirname = dirname(fileURLToPath(import.meta.url));
+   const builtinSaveSummary = join(__dirname, 'save-summary-hook.mjs');
+   const saveCmd = existsSync(saveSummaryPath) ? `node ${saveSummaryPath}` : `node ${builtinSaveSummary}`;
 
-   console.log('Запускаю Claude для генерации резюме...\n');
+   console.log(`${t('launchingSummarize')}\n`);
 
-   const prompt = `Ты — помощник для генерации кратких резюме сессий Claude Code.
+   const prompt = `You are a helper for generating short summaries of Claude Code sessions.
 
-Вот данные сессий:
+Here is the session data:
 
 ${sessionsData}
 
-Для КАЖДОЙ сессии (между маркерами ---SESSION:ID---):
-1. Прочитай сообщения пользователя
-2. Определи суть: что делали, какую задачу решали
-3. Сгенерируй краткое резюме на русском (1 строка, до 70 символов)
-4. Сохрани: ${saveCmd} --session "ID" --summary "текст"
+For EACH session (between ---SESSION:ID--- markers):
+1. Read the user messages
+2. Determine the essence: what was done, what task was being solved
+3. ${t('summaryLangHint')}
+4. Save: ${saveCmd} --session "ID" --summary "text"
 
-Хорошие резюме: "Фикс NaN channelId в плеере", "Настройка MCP серверов", "CSS фиксы для Telegram MiniApp"
-Плохие: "/mcp", "/login", "Короткая сессия"
+Good summaries: "Fix NaN channelId in player", "Configure MCP servers", "CSS fixes for Telegram MiniApp"
+Bad: "/mcp", "/login", "Short session"
 
-Выполни сохранение для КАЖДОЙ сессии.`;
+Execute save for EACH session.`;
 
    try {
-      execSync(`claude -p "${prompt.replace(/"/g, '\\"')}"`, { stdio: 'inherit' });
+      execFileSync('claude', ['-p', prompt], { stdio: 'inherit' });
    } catch {}
 }

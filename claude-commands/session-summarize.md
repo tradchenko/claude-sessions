@@ -1,20 +1,20 @@
 ---
 allowed-tools:
   - Bash
-description: "Сгенерировать AI-резюме для последних сессий"
+description: "Generate AI summaries for recent sessions"
 argument-hint: "[--limit N] [--session ID]"
 ---
 
-# Генерация AI-резюме сессий
+# AI Session Summary Generation
 
-Запусти команду:
+Run the command:
 
 ```bash
 claude-sessions summarize $ARGUMENTS
 ```
 
-Скрипт выведет данные сессий без описания. Для каждой сессии:
+The script will output data for sessions without descriptions. For each session:
 
-1. Прочитай сообщения пользователя
-2. Сгенерируй краткое резюме на русском (до 70 символов)
-3. Сохрани через: `node ~/.claude/scripts/save-summary.mjs --session ID --summary "текст"`
+1. Read the user messages
+2. Generate a short summary in English (up to 70 characters)
+3. Save via: `node ~/.claude/scripts/save-summary.mjs --session ID --summary "text"`

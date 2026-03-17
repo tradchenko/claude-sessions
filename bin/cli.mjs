@@ -1,17 +1,17 @@
 #!/usr/bin/env node
 
 /**
- * claude-sessions — CLI для управления сессиями Claude Code
+ * claude-sessions — CLI for managing Claude Code sessions
  *
- * Использование:
- *   claude-sessions              — интерактивный TUI пикер
- *   claude-sessions list         — текстовый список
- *   claude-sessions search <текст> — поиск по содержимому
- *   claude-sessions summarize    — AI-резюме для сессий без описания
- *   claude-sessions delete <id>  — удалить сессию
- *   claude-sessions restore <id> — восстановить недоступную сессию
- *   claude-sessions install      — установить slash-команды и hooks
- *   claude-sessions uninstall    — удалить slash-команды и hooks
+ * Usage:
+ *   claude-sessions              — interactive TUI picker
+ *   claude-sessions list         — text list
+ *   claude-sessions search <text> — search by content
+ *   claude-sessions summarize    — AI summaries for sessions without description
+ *   claude-sessions delete <id>  — delete session
+ *   claude-sessions restore <id> — restore unavailable session
+ *   claude-sessions install      — install slash commands and hooks
+ *   claude-sessions uninstall    — remove slash commands and hooks
  */
 
 import { resolve, dirname } from 'path';
@@ -23,7 +23,7 @@ const srcDir = resolve(__dirname, '..', 'src');
 const args = process.argv.slice(2);
 const command = args[0];
 
-// Если первый аргумент — число, это быстрый выбор
+// If the first argument is a number, it's a quick pick
 if (/^\d+$/.test(command)) {
    const { default: picker } = await import(resolve(srcDir, 'picker.mjs'));
    await picker(['--quick', command]);
@@ -42,7 +42,7 @@ switch (command) {
    case 's': {
       const query = args.slice(1).join(' ');
       if (!query) {
-         console.error('Использование: claude-sessions search <текст>');
+         console.error('Usage: claude-sessions search <text>');
          process.exit(1);
       }
       const { default: list } = await import(resolve(srcDir, 'list.mjs'));
@@ -62,7 +62,7 @@ switch (command) {
    case 'rm': {
       const id = args[1];
       if (!id) {
-         console.error('Использование: claude-sessions delete <session-id>');
+         console.error('Usage: claude-sessions delete <session-id>');
          process.exit(1);
       }
       const { default: deleteSession } = await import(resolve(srcDir, 'delete.mjs'));
@@ -73,7 +73,7 @@ switch (command) {
    case 'restore': {
       const id = args[1];
       if (!id) {
-         console.error('Использование: claude-sessions restore <session-id>');
+         console.error('Usage: claude-sessions restore <session-id>');
          process.exit(1);
       }
       const { default: restore } = await import(resolve(srcDir, 'restore.mjs'));
@@ -97,41 +97,41 @@ switch (command) {
    case '--help':
    case '-h': {
       console.log(`
-claude-sessions — Менеджер сессий Claude Code
+claude-sessions — Claude Code Session Manager
 
-Команды:
-  (без аргументов)     Интерактивный TUI пикер
-  <номер>              Быстрый запуск сессии по номеру
-  list [опции]         Текстовый список сессий
-  search <текст>       Поиск по содержимому сессий
-  summarize            AI-генерация резюме
-  delete <id>          Удалить сессию
-  restore <id>         Восстановить сессию из JSONL
-  install              Установить slash-команды и hooks
-  uninstall            Удалить slash-команды и hooks
+Commands:
+  (no arguments)       Interactive TUI picker
+  <number>             Quick launch session by number
+  list [options]       Text list of sessions
+  search <text>        Search by session content
+  summarize            AI summary generation
+  delete <id>          Delete session
+  restore <id>         Restore session from JSONL
+  install              Install slash commands and hooks
+  uninstall            Remove slash commands and hooks
 
-Опции для list:
-  --project <имя>      Фильтр по проекту
-  --search <текст>     Поиск по содержимому
-  --limit <N>          Количество (по умолчанию 20)
-  --all                Показать все
+Options for list:
+  --project <name>     Filter by project
+  --search <text>      Search by content
+  --limit <N>          Count (default 20)
+  --all                Show all
 
-TUI пикер (клавиши):
-  ↑↓          Навигация (с переходом в начало/конец)
-  Ввод текста Мгновенный поиск
-  Enter       Открыть сессию
-  Ctrl-D      Удалить сессию
-  Ctrl-A      AI-резюме
-  Ctrl-R      Обновить список
-  Esc         Выход
+TUI picker (keys):
+  ↑↓          Navigate (wraps around)
+  Type text   Instant search
+  Enter       Open session
+  Ctrl-D      Delete session
+  Ctrl-A      AI summary
+  Ctrl-R      Refresh list
+  Esc         Quit
 
-Алиасы: cs = claude-sessions
+Aliases: cs = claude-sessions
 `);
       break;
    }
 
    default: {
-      // По умолчанию — интерактивный пикер
+      // Default — interactive picker
       const { default: picker } = await import(resolve(srcDir, 'picker.mjs'));
       const pickerArgs = command ? ['--' + command, ...args.slice(1)] : args;
       await picker(pickerArgs.filter(Boolean));

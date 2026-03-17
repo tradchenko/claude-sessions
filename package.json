@@ -8,6 +8,7 @@
     "cs": "./bin/cli.mjs"
   },
   "scripts": {
+    "test": "node --test test/run.mjs",
     "postinstall": "node ./src/install.mjs --auto"
   },
   "keywords": [
@@ -31,6 +32,7 @@
     "bin/",
     "src/",
     "claude-commands/",
+    "test/",
     "README.md",
     "LICENSE"
   ]

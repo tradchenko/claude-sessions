@@ -1,12 +1,13 @@
 /**
- * Установка slash-команд, hooks и скриптов в ~/.claude/
- * Безопасно: не перезаписывает существующие настройки, а дополняет.
+ * Install slash commands, hooks and scripts to ~/.claude/
+ * Safe: does not overwrite existing settings, only adds to them.
  */
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { CLAUDE_DIR, COMMANDS_DIR, SCRIPTS_DIR, SETTINGS_FILE, HISTORY_FILE, SESSION_INDEX, ensureClaudeDir } from './config.mjs';
+import { t } from './i18n.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..');
@@ -15,12 +16,12 @@ const PKG_COMMANDS = join(PKG_ROOT, 'claude-commands');
 const isAuto = process.argv.includes('--auto');
 
 /**
- * Копирует slash-команды
+ * Copy slash commands
  */
 function installCommands() {
    const commands = [
-      { file: 'sessions.md', desc: '/sessions — список сессий' },
-      { file: 'session-summarize.md', desc: '/session-summarize — AI-резюме' },
+      { file: 'sessions.md', desc: '/sessions — session list' },
+      { file: 'session-summarize.md', desc: '/session-summarize — AI summaries' },
    ];
 
    for (const cmd of commands) {
@@ -30,7 +31,7 @@ function installCommands() {
       if (!existsSync(src)) continue;
 
       if (existsSync(dest)) {
-         if (!isAuto) console.log(`   ⏭  ${cmd.desc} — уже существует, пропускаю`);
+         if (!isAuto) console.log(`   ⏭  ${cmd.desc} — ${t('alreadyExists')}`);
          continue;
       }
 
@@ -40,7 +41,7 @@ function installCommands() {
 }
 
 /**
- * Копирует вспомогательный скрипт save-summary.mjs
+ * Copy helper script save-summary.mjs
  */
 function installScripts() {
    const saveSummary = join(PKG_ROOT, 'src', 'save-summary-hook.mjs');
@@ -48,17 +49,17 @@ function installScripts() {
 
    if (existsSync(saveSummary) && !existsSync(dest)) {
       copyFileSync(saveSummary, dest);
-      if (!isAuto) console.log('   ✅ save-summary.mjs скопирован');
+      if (!isAuto) console.log('   ✅ save-summary.mjs copied');
    }
 }
 
 /**
- * Добавляет Stop hook для автосохранения метаданных сессии.
- * Безопасно: не трогает существующие hooks.
+ * Add Stop hook for auto-saving session metadata.
+ * Safe: does not touch existing hooks.
  */
 function installHook() {
    if (!existsSync(SETTINGS_FILE)) {
-      if (!isAuto) console.log('   ⚠️  settings.json не найден — hook не установлен');
+      if (!isAuto) console.log(`   ⚠️  ${t('settingsNotFound')}`);
       return;
    }
 
@@ -68,15 +69,15 @@ function installHook() {
       if (!settings.hooks) settings.hooks = {};
       if (!settings.hooks.Stop) settings.hooks.Stop = [];
 
-      // Проверяем, не установлен ли уже наш hook
+      // Check if our hook is already installed
       const alreadyInstalled = settings.hooks.Stop.some((entry) => JSON.stringify(entry).includes('save-session-summary'));
 
       if (alreadyInstalled) {
-         if (!isAuto) console.log('   ⏭  Stop hook — уже установлен');
+         if (!isAuto) console.log(`   ⏭  Stop hook — ${t('alreadyInstalled')}`);
          return;
       }
 
-      // Добавляем hook
+      // Add hook
       settings.hooks.Stop.push({
          hooks: [
             {
@@ -87,14 +88,14 @@ function installHook() {
       });
 
       writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-      if (!isAuto) console.log('   ✅ Stop hook для автосохранения метаданных');
+      if (!isAuto) console.log('   ✅ Stop hook for auto-saving metadata');
    } catch (e) {
-      if (!isAuto) console.log(`   ⚠️  Не удалось обновить settings.json: ${e.message}`);
+      if (!isAuto) console.log(`   ⚠️  ${t('failedSettings', e.message)}`);
    }
 }
 
 /**
- * Копирует save-session-summary.mjs
+ * Copy save-session-summary.mjs
  */
 function installSaveHookScript() {
    const src = join(PKG_ROOT, 'src', 'save-session-summary.mjs');
@@ -102,16 +103,16 @@ function installSaveHookScript() {
 
    if (!existsSync(dest) && existsSync(src)) {
       copyFileSync(src, dest);
-      if (!isAuto) console.log('   ✅ save-session-summary.mjs скопирован');
+      if (!isAuto) console.log('   ✅ save-session-summary.mjs copied');
    }
 }
 
 /**
- * Сканирует существующие сессии и показывает статистику
+ * Scan existing sessions and show statistics
  */
 async function discoverExistingSessions() {
    if (!existsSync(HISTORY_FILE)) {
-      console.log('   ℹ️  История сессий пуста. Запусти Claude Code чтобы создать первые сессии.');
+      console.log(`   ℹ️  ${t('historyEmpty')}`);
       return;
    }
 
@@ -139,11 +140,11 @@ async function discoverExistingSessions() {
 
    const total = sessionsMap.size;
    if (total === 0) {
-      console.log('   ℹ️  Сессий не найдено.');
+      console.log(`   ℹ️  ${t('noSessionsInstall')}`);
       return;
    }
 
-   // Считаем сессии с резюме
+   // Count sessions with summaries
    let withSummary = 0;
    if (existsSync(SESSION_INDEX)) {
       try {
@@ -152,24 +153,24 @@ async function discoverExistingSessions() {
       } catch {}
    }
 
-   // Находим самую раннюю и последнюю
+   // Find earliest and latest
    const sorted = Array.from(sessionsMap.values()).sort((a, b) => a.ts - b.ts);
-   const oldest = new Date(sorted[0].ts).toLocaleDateString('ru-RU');
-   const newest = new Date(sorted[sorted.length - 1].ts).toLocaleDateString('ru-RU');
+   const oldest = new Date(sorted[0].ts).toLocaleDateString('en-US');
+   const newest = new Date(sorted[sorted.length - 1].ts).toLocaleDateString('en-US');
 
-   console.log(`   📊 Найдено сессий: ${total}`);
-   console.log(`   📁 Проектов: ${projects.size} (${[...projects].slice(0, 5).join(', ')}${projects.size > 5 ? '...' : ''})`);
-   console.log(`   📅 Период: ${oldest} — ${newest}`);
-   console.log(`   📝 С AI-резюме: ${withSummary}/${total}`);
+   console.log(`   📊 ${t('sessionsFound', total)}`);
+   console.log(`   📁 ${t('projects', projects.size, [...projects].slice(0, 5).join(', ') + (projects.size > 5 ? '...' : ''))}`);
+   console.log(`   📅 ${t('period', oldest, newest)}`);
+   console.log(`   📝 ${t('withSummary', withSummary, total)}`);
 
    if (total - withSummary > 0) {
-      console.log(`\n   💡 ${total - withSummary} сессий без описания.`);
-      console.log(`      Запусти: claude-sessions summarize`);
+      console.log(`\n   💡 ${t('withoutDesc', total - withSummary)}`);
+      console.log(`      ${t('runSummarize')}`);
    }
 }
 
 /**
- * Определяет терминал пользователя и даёт рекомендации
+ * Detect user terminal and provide recommendations
  */
 function detectTerminal() {
    const term = process.env.TERM_PROGRAM || process.env.TERM || 'unknown';
@@ -178,48 +179,48 @@ function detectTerminal() {
    const iterm = process.env.TERM_PROGRAM === 'iTerm.app';
    const companion = process.env.COMPANION_AUTH_TOKEN || process.env.SDK_URL;
 
-   console.log(`   🖥  Терминал: ${warp ? 'Warp' : vscode ? 'VS Code' : iterm ? 'iTerm2' : term}`);
+   console.log(`   🖥  ${t('terminal')}: ${warp ? 'Warp' : vscode ? 'VS Code' : iterm ? 'iTerm2' : term}`);
 
    if (warp) {
-      console.log(`   ℹ️  Warp: TUI пикер использует Node.js (не fzf) для совместимости`);
+      console.log(`   ℹ️  ${t('warpNote')}`);
    }
    if (companion) {
-      console.log(`   ℹ️  The Companion обнаружен — /sessions будет работать через WebSocket`);
+      console.log(`   ℹ️  ${t('companionNote')}`);
    }
 }
 
 export default async function install() {
-   console.log('\n🔧 Установка claude-sessions...\n');
+   console.log(`\n🔧 ${t('installing')}\n`);
 
    ensureClaudeDir();
    console.log(`   📁 Claude Code: ${CLAUDE_DIR}`);
 
    detectTerminal();
 
-   console.log('\n   Slash-команды:');
+   console.log(`\n   ${t('slashCommands')}`);
    installCommands();
 
-   console.log('\n   Скрипты:');
+   console.log(`\n   ${t('scripts')}`);
    installScripts();
    installSaveHookScript();
 
-   console.log('\n   Hooks:');
+   console.log(`\n   ${t('hooks')}`);
    installHook();
 
-   console.log('\n   Существующие сессии:');
+   console.log(`\n   ${t('existingSessions')}`);
    await discoverExistingSessions();
 
-   console.log('\n✅ Установка завершена!\n');
-   console.log('Использование:');
-   console.log('   claude-sessions     — интерактивный TUI пикер (стрелки + поиск)');
-   console.log('   cs                  — короткий алиас');
-   console.log('   cs 3                — быстрый запуск сессии #3');
-   console.log('   cs --search miniapp — поиск по содержимому');
-   console.log('   /sessions           — внутри Claude Code');
-   console.log('   /session-summarize  — AI-резюме внутри Claude Code\n');
+   console.log(`\n✅ ${t('installComplete')}\n`);
+   console.log(`${t('usage')}`);
+   console.log('   claude-sessions     — interactive TUI picker (arrows + search)');
+   console.log('   cs                  — short alias');
+   console.log('   cs 3                — quick launch session #3');
+   console.log('   cs --search miniapp — search by content');
+   console.log('   /sessions           — inside Claude Code');
+   console.log('   /session-summarize  — AI summaries inside Claude Code\n');
 }
 
-// Поддержка прямого вызова из postinstall
+// Support direct invocation from postinstall
 if (process.argv[1]?.endsWith('install.mjs') && isAuto) {
    install().catch(() => {});
 }

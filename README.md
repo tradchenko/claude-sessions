@@ -13,6 +13,7 @@ Interactive session manager for [Claude Code](https://docs.anthropic.com/en/docs
 - **AI summaries** — auto-generate meaningful session descriptions via Claude
 - **Session restore** — recover sessions that `--resume` can't find from JSONL files
 - **Slash commands** — `/sessions` and `/session-summarize` inside Claude Code
+- **i18n** — auto-detects system language (English, Russian, Spanish, French, German, Chinese, Japanese, Korean, Portuguese, Turkish)
 - **Cross-platform** — macOS, Linux, Windows (WSL)
 - **Zero dependencies** — pure Node.js, no external packages
 
@@ -86,10 +87,13 @@ claude-sessions install
 
 The `install` command:
 
-1. Copies `/sessions` and `/session-summarize` slash commands to `~/.claude/commands/`
-2. Adds a Stop hook for auto-tracking session metadata
-3. Scans existing sessions and shows statistics
-4. Detects your terminal and gives compatibility tips
+1. Detects your terminal (Warp, iTerm2, VS Code, etc.) and gives compatibility tips
+2. Copies `/sessions` and `/session-summarize` slash commands to `~/.claude/commands/`
+3. Adds a Stop hook for auto-tracking session metadata
+4. Scans your existing sessions and shows statistics (count, projects, date range)
+5. Reports how many sessions lack AI summaries
+
+**Safe install** — never overwrites existing files or settings. Existing slash commands, hooks, and configurations are preserved.
 
 ### Manual
 
@@ -102,6 +106,28 @@ claude-sessions install
 
 ## How it works
 
+### Architecture
+
+```
+claude-sessions
+├── bin/cli.mjs              # CLI entry point (routes commands)
+├── src/
+│   ├── picker.mjs           # Interactive TUI (raw terminal I/O)
+│   ├── sessions.mjs         # Session loading from history.jsonl
+│   ├── list.mjs             # Text list output
+│   ├── delete.mjs           # Safe deletion (JSON parsing, ID validation)
+│   ├── restore.mjs          # Session recovery from JSONL
+│   ├── summarize.mjs        # AI summary generation via Claude CLI
+│   ├── install.mjs          # Slash commands & hooks installer
+│   ├── uninstall.mjs        # Clean removal
+│   ├── config.mjs           # Cross-platform path resolution
+│   └── i18n.mjs             # Internationalization
+├── claude-commands/          # Slash command templates
+└── test/                     # Unit tests (node:test)
+```
+
+### Data sources
+
 Claude Code stores session data in `~/.claude/`:
 
 | File                         | Content                                                      |
@@ -112,7 +138,45 @@ Claude Code stores session data in `~/.claude/`:
 
 **Sessions survive reboots** — they are regular files on disk.
 
-When `claude --resume` can't find a session (e.g., after cleanup), `claude-sessions` extracts the conversation from JSONL files and starts a new session with the restored context.
+### Session restore
+
+When `claude --resume` can't find a session (e.g., after cleanup or Claude Code update), `claude-sessions` automatically:
+
+1. Searches for the session JSONL file in `~/.claude/projects/`
+2. Extracts the conversation (up to 50 messages)
+3. Cleans up system tags and metadata
+4. Starts a new Claude session with the restored context as a markdown prompt
+
+### Security
+
+- **Session ID validation** — only UUID-format IDs accepted, prevents path traversal
+- **Safe deletion** — JSON parsing (not string matching) to avoid deleting unrelated data
+- **No shell injection** — all external commands use `execFileSync` (no shell interpolation)
+- **Install safety** — never overwrites existing files, only appends hooks
+
+## Internationalization (i18n)
+
+The tool auto-detects your system language from `LC_ALL`, `LANG`, or `LANGUAGE` environment variables. On macOS, it also checks `AppleLocale`.
+
+Supported languages: English (default), Russian, Spanish, French, German, Chinese, Japanese, Korean, Portuguese, Turkish.
+
+Override the language:
+
+```bash
+CLAUDE_SESSIONS_LANG=en claude-sessions    # force English
+CLAUDE_SESSIONS_LANG=ru claude-sessions    # force Russian
+```
+
+AI-generated session summaries also respect the detected language.
+
+## Testing
+
+```bash
+npm test                     # run all 23 tests
+node --test test/run.mjs     # same thing
+```
+
+Tests use Node.js built-in test runner (`node:test`) — no test dependencies required. Tests create isolated mock `~/.claude` directories and clean up after themselves.
 
 ## Uninstall
 

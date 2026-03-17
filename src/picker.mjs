@@ -1,14 +1,18 @@
 /**
- * Интерактивный TUI пикер сессий.
- * Работает в Warp, iTerm2, Terminal.app, VS Code и любых терминалах.
+ * Interactive TUI session picker.
+ * Works in Warp, iTerm2, Terminal.app, VS Code and any terminal.
  */
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { join } from 'path';
-import { execSync } from 'child_process';
+import { existsSync, readFileSync, writeFileSync, readdirSync, unlinkSync } from 'fs';
+import { join, dirname } from 'path';
+import { execSync, execFileSync } from 'child_process';
 import { createInterface } from 'readline';
+import { fileURLToPath } from 'url';
 import { loadSessions } from './sessions.mjs';
-import { ensureClaudeDir, CLAUDE_DIR, findClaudeCli } from './config.mjs';
+import { ensureClaudeDir, CLAUDE_DIR, PROJECTS_DIR } from './config.mjs';
+import { t } from './i18n.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 const ESC = '\x1b';
 const HIDE_CURSOR = `${ESC}[?25l`;
@@ -98,7 +102,7 @@ class SessionPicker {
 
       moveCursor(sepRow + 1, 1);
       process.stdout.write(CLEAR_LINE);
-      process.stdout.write(`  ${DIM}↑↓${RESET} навигация  ${DIM}Enter${RESET} открыть  ${DIM}^D${RESET} удалить  ${DIM}^A${RESET} AI-резюме  ${DIM}^R${RESET} обновить  ${DIM}Esc${RESET} выход`);
+      process.stdout.write(`  ${DIM}↑↓${RESET} ${t('navigate')}  ${DIM}Enter${RESET} ${t('open')}  ${DIM}^D${RESET} ${t('delete_')}  ${DIM}^A${RESET} ${t('aiSummary')}  ${DIM}^R${RESET} ${t('refresh')}  ${DIM}Esc${RESET} ${t('quit')}`);
 
       if (this.message) {
          moveCursor(sepRow + 2, 1);
@@ -155,7 +159,7 @@ class SessionPicker {
 export default async function picker(args = []) {
    ensureClaudeDir();
 
-   // Парсинг аргументов
+   // Parse arguments
    let projectFilter = null;
    let searchPreFilter = null;
    let quickPick = null;
@@ -176,24 +180,24 @@ export default async function picker(args = []) {
    const sessions = await loadSessions({ projectFilter, searchQuery: searchPreFilter });
 
    if (sessions.length === 0) {
-      console.log('Сессий не найдено.');
+      console.log(t('noSessionsFound'));
       process.exit(0);
    }
 
-   // Быстрый выбор
+   // Quick pick
    if (quickPick !== null) {
       const s = sessions[quickPick - 1];
       if (!s) {
-         console.log(`Сессия #${quickPick} не найдена.`);
+         console.log(t('sessionNotFoundNum', quickPick));
          process.exit(1);
       }
       console.log(`\n▶ claude --resume ${s.id}\n`);
-      execSync(`claude --resume ${s.id}`, { stdio: 'inherit' });
+      execFileSync('claude', ['--resume', s.id], { stdio: 'inherit' });
       process.exit(0);
    }
 
    if (!process.stdin.isTTY) {
-      console.log('Ошибка: требуется интерактивный терминал.');
+      console.log(t('errorTTY'));
       process.exit(1);
    }
 
@@ -223,18 +227,16 @@ export default async function picker(args = []) {
       p.render();
    });
 
-   // Пути к скриптам
-   const deleteScript = join(CLAUDE_DIR, 'scripts', 'delete-session.sh');
-   const summarizeScript = join(CLAUDE_DIR, 'scripts', 'ai-summarize-sessions.sh');
+   const summarizePath = join(__dirname, 'summarize.mjs');
 
    process.stdin.on('data', (key) => {
-      // Подтверждение удаления — ПЕРВЫЙ приоритет
+      // Delete confirmation — FIRST priority
       if (p.confirmDelete) {
          const s = p.confirmDelete;
          p.confirmDelete = null;
 
-         if (key === '\r' || key === '\n' || key === 'y' || key === 'Y' || key === 'д' || key === 'Д') {
-            // Inline удаление — без require(), без shell
+         if (key === '\r' || key === '\n' || key === 'y' || key === 'Y') {
+            // Deletion — JSON parsing for safety
             try {
                const histPath = join(CLAUDE_DIR, 'history.jsonl');
                if (existsSync(histPath)) {
@@ -243,7 +245,14 @@ export default async function picker(args = []) {
                      histPath,
                      content
                         .split('\n')
-                        .filter((l) => !l.includes(`"sessionId":"${s.id}"`))
+                        .filter((l) => {
+                           if (!l.trim()) return true;
+                           try {
+                              return JSON.parse(l).sessionId !== s.id;
+                           } catch {
+                              return true;
+                           }
+                        })
                         .join('\n'),
                   );
                }
@@ -253,6 +262,13 @@ export default async function picker(args = []) {
                   delete idx[s.id];
                   writeFileSync(idxPath, JSON.stringify(idx, null, 2));
                }
+               // Remove session JSONL file from projects/
+               if (existsSync(PROJECTS_DIR)) {
+                  for (const dir of readdirSync(PROJECTS_DIR)) {
+                     const sf = join(PROJECTS_DIR, dir, `${s.id}.jsonl`);
+                     if (existsSync(sf)) unlinkSync(sf);
+                  }
+               }
             } catch {}
 
             p.allSessions = p.allSessions.filter((x) => x.id !== s.id);
@@ -261,7 +277,7 @@ export default async function picker(args = []) {
                p.selected = Math.max(0, p.filtered.length - 1);
             }
             p.scrollToSelected();
-            p.message = `${GREEN}✅ Сессия удалена${RESET}`;
+            p.message = `${GREEN}✅ ${t('sessionDeleted')}${RESET}`;
             p.render();
             setTimeout(() => {
                p.message = '';
@@ -274,27 +290,27 @@ export default async function picker(args = []) {
          return;
       }
 
-      // Esc — выход
+      // Esc — quit
       if (key === '\x1b' || key === '\x03') {
          cleanup();
          process.exit(0);
       }
 
-      // Enter — открыть
+      // Enter — open
       if (key === '\r' || key === '\n') {
          const s = p.getSelected();
          if (s) {
             cleanup();
             console.log(`\n▶ claude --resume ${s.id}\n`);
             try {
-               execSync(`claude --resume ${s.id}`, { stdio: 'inherit' });
+               execFileSync('claude', ['--resume', s.id], { stdio: 'inherit' });
             } catch (e) {
                const output = e.stderr?.toString() || e.stdout?.toString() || '';
                if (output.includes('No conversation found') || e.status === 1) {
-                  console.log(`\n⚠️  Сессия не найдена через --resume. Восстановление из JSONL...\n`);
+                  console.log(`\n${t('sessionNotFound')}\n`);
                   try {
-                     const restorePath = join(new URL('.', import.meta.url).pathname, 'restore.mjs');
-                     execSync(`node "${restorePath}" "${s.id}"`, { stdio: 'inherit' });
+                     const restorePath = join(__dirname, 'restore.mjs');
+                     execFileSync('node', [restorePath, s.id], { stdio: 'inherit' });
                   } catch {}
                }
             }
@@ -303,26 +319,26 @@ export default async function picker(args = []) {
          return;
       }
 
-      // Ctrl-D — удалить
+      // Ctrl-D — delete
       if (key === '\x04') {
          const s = p.getSelected();
          if (s) {
-            p.message = `${RED}⚠️  Удалить [${s.dateStr}] ${s.project} — ${s.summary}? (Y/n)${RESET}`;
+            p.message = `${RED}⚠️  ${t('confirmDelete', s.dateStr, s.project, s.summary)}${RESET}`;
             p.confirmDelete = s;
             p.render();
          }
          return;
       }
 
-      // Ctrl-R — обновить
+      // Ctrl-R — refresh
       if (key === '\x12') {
-         p.message = `${DIM}Обновляю...${RESET}`;
+         p.message = `${DIM}${t('refreshing')}${RESET}`;
          p.render();
          loadSessions().then((fresh) => {
             p.allSessions = fresh;
             p.filter();
             p.scrollToSelected();
-            p.message = `${GREEN}✅ Обновлено (${fresh.length})${RESET}`;
+            p.message = `${GREEN}✅ ${t('refreshed', fresh.length)}${RESET}`;
             p.render();
             setTimeout(() => {
                p.message = '';
@@ -332,22 +348,17 @@ export default async function picker(args = []) {
          return;
       }
 
-      // Ctrl-A — AI-резюме
+      // Ctrl-A — AI summaries
       if (key === '\x01') {
          cleanup();
-         console.log('\n📝 Запуск AI-анализа сессий...\n');
+         console.log(`\n${t('launchingAI')}\n`);
          try {
-            if (existsSync(summarizeScript)) {
-               execSync(`"${summarizeScript}"`, { stdio: 'inherit' });
-            } else {
-               const sumPath = join(new URL('.', import.meta.url).pathname, 'summarize.mjs');
-               execSync(`node "${sumPath}"`, { stdio: 'inherit' });
-            }
+            execFileSync('node', [summarizePath], { stdio: 'inherit' });
          } catch {}
          process.exit(0);
       }
 
-      // Стрелки
+      // Arrows
       if (key === '\x1b[A' || key === '\x1bOA') {
          p.moveUp();
          p.render();
@@ -379,7 +390,7 @@ export default async function picker(args = []) {
          return;
       }
 
-      // Символы — поиск
+      // Characters — search
       if (key.length === 1 && key >= ' ') {
          p.searchText += key;
          p.filter();
@@ -387,7 +398,7 @@ export default async function picker(args = []) {
          return;
       }
 
-      // Мультибайтовые (кириллица)
+      // Multibyte characters (unicode)
       if (key.length > 1 && !key.startsWith('\x1b')) {
          p.searchText += key;
          p.filter();
@@ -396,4 +407,3 @@ export default async function picker(args = []) {
       }
    });
 }
-
