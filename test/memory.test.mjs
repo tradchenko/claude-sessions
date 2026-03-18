@@ -201,3 +201,33 @@ describe('L0 extraction', () => {
       assert.equal(l0.messageCount, 1);
    });
 });
+
+describe('memory file format', () => {
+   it('serializes memory to file content', async () => {
+      const { serializeMemory } = await import('../src/memory/format.mjs');
+      const meta = { name: 'test', category: 'cases', hotness: 0.5 };
+      const content = 'Fixed the auth bug by checking token expiry.';
+      const file = serializeMemory(meta, content);
+      assert.ok(file.startsWith('<!--json'));
+      assert.ok(file.includes('"name": "test"'));
+      assert.ok(file.endsWith(content));
+   });
+
+   it('parses memory file back to meta + content', async () => {
+      const { serializeMemory, parseMemory } = await import('../src/memory/format.mjs');
+      const meta = { name: 'test', category: 'cases', hotness: 0.5, active_count: 3 };
+      const content = 'Some memory content here.';
+      const file = serializeMemory(meta, content);
+      const parsed = parseMemory(file);
+      assert.equal(parsed.meta.name, 'test');
+      assert.equal(parsed.meta.hotness, 0.5);
+      assert.equal(parsed.content, content);
+   });
+
+   it('handles malformed files gracefully', async () => {
+      const { parseMemory } = await import('../src/memory/format.mjs');
+      const parsed = parseMemory('just plain text without frontmatter');
+      assert.equal(parsed.meta, null);
+      assert.equal(parsed.content, 'just plain text without frontmatter');
+   });
+});
