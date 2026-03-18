@@ -3,10 +3,10 @@
  * Extracts data and runs claude to generate summaries.
  */
 
-import { readFileSync, readdirSync, existsSync, createReadStream } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import { join, dirname } from 'path';
-import { execFileSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { HISTORY_FILE, PROJECTS_DIR, SESSION_INDEX, CLAUDE_DIR, ensureClaudeDir, findClaudeCli } from './config.mjs';
 import { t } from './i18n.mjs';
@@ -149,12 +149,6 @@ export default async function summarize(args = []) {
       return;
    }
 
-   // Determine path to save-summary script
-   const saveSummaryPath = join(CLAUDE_DIR, 'scripts', 'save-summary.mjs');
-   const __dirname = dirname(fileURLToPath(import.meta.url));
-   const builtinSaveSummary = join(__dirname, 'save-summary-hook.mjs');
-   const saveCmd = existsSync(saveSummaryPath) ? `node ${saveSummaryPath}` : `node ${builtinSaveSummary}`;
-
    console.log(`${t('launchingSummarize')}\n`);
 
    const prompt = `You are a helper for generating short summaries of Claude Code sessions.
@@ -167,16 +161,54 @@ For EACH session (between ---SESSION:ID--- markers):
 1. Read the user messages
 2. Determine the essence: what was done, what task was being solved
 3. ${t('summaryLangHint')}
-4. Save: ${saveCmd} --session "ID" --summary "text"
+
+Return ONLY a JSON array, no other text:
+[{"id": "session-id", "summary": "short summary"}]
 
 Good summaries: "Fix NaN channelId in player", "Configure MCP servers", "CSS fixes for Telegram MiniApp"
-Bad: "/mcp", "/login", "Short session"
-
-Execute save for EACH session.`;
+Bad: "/mcp", "/login", "Short session"`;
 
    try {
-      execFileSync('claude', ['-p', prompt], { stdio: 'inherit' });
-      console.log(`\n✅ ${t('summarizeComplete', count)}`);
+      const proc = spawnSync(claudePath, ['--print', '--output-format', 'text', '--model', 'haiku'], {
+         input: prompt,
+         encoding: 'utf8',
+         timeout: 120_000,
+         maxBuffer: 1024 * 1024,
+      });
+
+      if (proc.error) throw proc.error;
+      if (proc.status !== 0) throw new Error(proc.stderr || 'Claude CLI failed');
+
+      const output = proc.stdout || '';
+
+      // Parse JSON array from response
+      const match = output.match(/\[[\s\S]*\]/);
+      if (!match) {
+         console.error(`❌ ${t('summarizeFailed', 'Could not parse Claude response')}`);
+         return;
+      }
+
+      const summaries = JSON.parse(match[0]);
+      if (!Array.isArray(summaries)) throw new Error('Response is not an array');
+
+      // Save summaries to index
+      let saved = 0;
+      for (const s of summaries) {
+         if (!s.id || !s.summary) continue;
+         const summary = s.summary.replace(/\n/g, ' ').trim().slice(0, 65);
+         if (summary.length < 5) continue;
+         index[s.id] = {
+            ...index[s.id],
+            sessionId: s.id,
+            summary,
+            lastActive: index[s.id]?.lastActive || Date.now(),
+         };
+         saved++;
+         console.log(`   ✅ ${s.id.slice(0, 8)}: ${summary}`);
+      }
+
+      writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
+      console.log(`\n✅ ${t('summarizeComplete', saved)}`);
    } catch (e) {
       console.error(`\n❌ ${t('summarizeFailed', e.message || 'unknown error')}`);
    }
