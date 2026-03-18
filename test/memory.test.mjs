@@ -149,3 +149,55 @@ describe('hotness scoring', () => {
       assert.ok(result.memories['profile/a'].hotness > result.memories['cases/b'].hotness);
    });
 });
+
+describe('L0 extraction', () => {
+   it('extracts summary from messages', async () => {
+      const { extractL0FromMessages } = await import('../src/memory/extract-l0.mjs');
+      const messages = [
+         { role: 'user', content: 'Fix the login bug in auth.js' },
+         { role: 'assistant', content: 'I will look at src/auth.js and src/middleware/session.js' },
+         { role: 'user', content: 'Also update the tests' },
+      ];
+      const l0 = extractL0FromMessages(messages, '/my/project');
+      assert.ok(l0.summary.length > 0);
+      assert.ok(l0.summary.length <= 120);
+      assert.equal(l0.project, '/my/project');
+      assert.equal(l0.messageCount, 3);
+      assert.ok(l0.files.includes('src/auth.js'));
+   });
+
+   it('extracts file paths from text', async () => {
+      const { extractFilePaths } = await import('../src/memory/extract-l0.mjs');
+      const text = 'I modified src/config.mjs and test/run.mjs, also checked package.json';
+      const files = extractFilePaths(text);
+      assert.ok(files.includes('src/config.mjs'));
+      assert.ok(files.includes('test/run.mjs'));
+      assert.ok(files.includes('package.json'));
+   });
+
+   it('returns empty L0 for empty messages', async () => {
+      const { extractL0FromMessages } = await import('../src/memory/extract-l0.mjs');
+      const l0 = extractL0FromMessages([], '/project');
+      assert.equal(l0.messageCount, 0);
+      assert.equal(l0.summary, '');
+   });
+
+   it('extracts L0 from raw JSONL lines', async () => {
+      const { extractL0FromJSONL } = await import('../src/memory/extract-l0.mjs');
+      const lines = [
+         JSON.stringify({ type: 'human', message: { content: 'Fix the login bug in auth.js' } }),
+         JSON.stringify({ type: 'assistant', message: { content: 'Looking at src/auth.js and src/middleware/session.js' } }),
+      ];
+      const l0 = extractL0FromJSONL(lines, '/my/project');
+      assert.equal(l0.messageCount, 2);
+      assert.ok(l0.summary.includes('Fix the login'));
+      assert.ok(l0.files.includes('src/auth.js'));
+   });
+
+   it('handles malformed JSONL lines gracefully', async () => {
+      const { extractL0FromJSONL } = await import('../src/memory/extract-l0.mjs');
+      const lines = ['not json', '{ broken', JSON.stringify({ type: 'human', message: { content: 'hello' } })];
+      const l0 = extractL0FromJSONL(lines, '/project');
+      assert.equal(l0.messageCount, 1);
+   });
+});
