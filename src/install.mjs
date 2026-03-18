@@ -6,8 +6,10 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CLAUDE_DIR, COMMANDS_DIR, SCRIPTS_DIR, SETTINGS_FILE, HISTORY_FILE, SESSION_INDEX, ensureClaudeDir } from './config.mjs';
+import { CLAUDE_DIR, COMMANDS_DIR, SCRIPTS_DIR, SETTINGS_FILE, HISTORY_FILE, SESSION_INDEX, MEMORY_DIR, MEMORIES_DIR, MEMORY_INDEX, PROJECTS_DIR, ensureClaudeDir } from './config.mjs';
 import { t } from './i18n.mjs';
+import { migrateSessionIndex, generateL0ForExistingSessions } from './memory/migrate.mjs';
+import { writeIndex } from './memory/index.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..');
@@ -209,6 +211,19 @@ export default async function install() {
 
    console.log(`\n   ${t('existingSessions')}`);
    await discoverExistingSessions();
+
+   // Create memory directories
+   mkdirSync(MEMORY_DIR, { recursive: true });
+   mkdirSync(MEMORIES_DIR, { recursive: true });
+
+   // Migrate existing sessions to new memory index
+   if (existsSync(SESSION_INDEX)) {
+      const index = migrateSessionIndex(SESSION_INDEX, MEMORY_INDEX, PROJECTS_DIR);
+      const l0Count = generateL0ForExistingSessions(index, PROJECTS_DIR);
+      if (l0Count > 0) writeIndex(MEMORY_INDEX, index);
+      console.log(`\n   Migrated ${Object.keys(index.sessions).length} sessions, generated L0 for ${l0Count}`);
+   }
+   console.log(`\n   💡 Run 'claude-sessions enable-memory' to enable Claude integration`);
 
    console.log(`\n✅ ${t('installComplete')}\n`);
    console.log(`${t('usage')}`);

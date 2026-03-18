@@ -421,6 +421,65 @@ describe('migration', () => {
    });
 });
 
+describe('enable/disable memory', () => {
+   let tempDir;
+   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), 'cs-enable-')); });
+   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+   it('enableMemory adds SessionStart hook to settings.json', async () => {
+      const { enableMemory } = await import('../src/enable-memory.mjs');
+      const settingsPath = join(tempDir, 'settings.json');
+      writeFileSync(settingsPath, JSON.stringify({ hooks: {} }));
+      enableMemory({ settingsPath, claudeMdPath: join(tempDir, 'CLAUDE.md'), scriptsDir: tempDir });
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      assert.ok(settings.hooks.SessionStart);
+      assert.ok(settings.hooks.SessionStart.length > 0);
+      assert.ok(settings.hooks.SessionStart[0].command.includes('session-start-hook'));
+   });
+
+   it('enableMemory adds section to CLAUDE.md', async () => {
+      const { enableMemory } = await import('../src/enable-memory.mjs');
+      const claudeMdPath = join(tempDir, 'CLAUDE.md');
+      writeFileSync(claudeMdPath, '# Existing content\n');
+      enableMemory({ settingsPath: join(tempDir, 'settings.json'), claudeMdPath, scriptsDir: tempDir });
+      const md = readFileSync(claudeMdPath, 'utf8');
+      assert.ok(md.includes('Session Memory System'));
+      assert.ok(md.includes('Existing content'));
+   });
+
+   it('enableMemory is idempotent', async () => {
+      const { enableMemory } = await import('../src/enable-memory.mjs');
+      const settingsPath = join(tempDir, 'settings.json');
+      writeFileSync(settingsPath, JSON.stringify({ hooks: {} }));
+      const claudeMdPath = join(tempDir, 'CLAUDE.md');
+      enableMemory({ settingsPath, claudeMdPath, scriptsDir: tempDir });
+      enableMemory({ settingsPath, claudeMdPath, scriptsDir: tempDir });
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      assert.equal(settings.hooks.SessionStart.length, 1);
+   });
+
+   it('disableMemory removes SessionStart hook', async () => {
+      const { disableMemory } = await import('../src/disable-memory.mjs');
+      const settingsPath = join(tempDir, 'settings.json');
+      writeFileSync(settingsPath, JSON.stringify({
+         hooks: { SessionStart: [{ type: 'command', command: 'node session-start-hook.mjs' }] }
+      }));
+      disableMemory({ settingsPath, claudeMdPath: join(tempDir, 'CLAUDE.md') });
+      const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+      assert.equal(settings.hooks.SessionStart.length, 0);
+   });
+
+   it('disableMemory removes CLAUDE.md section', async () => {
+      const { disableMemory } = await import('../src/disable-memory.mjs');
+      const claudeMdPath = join(tempDir, 'CLAUDE.md');
+      writeFileSync(claudeMdPath, '# Before\n\n# Session Memory System\nSome content here.\n');
+      disableMemory({ settingsPath: join(tempDir, 'settings.json'), claudeMdPath });
+      const md = readFileSync(claudeMdPath, 'utf8');
+      assert.ok(!md.includes('Session Memory System'));
+      assert.ok(md.includes('Before'));
+   });
+});
+
 describe('catalog generation', () => {
    it('generates compact catalog table', async () => {
       const { generateCatalog } = await import('../src/memory/catalog.mjs');
