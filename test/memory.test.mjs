@@ -103,3 +103,49 @@ describe('memory index', () => {
       assert.ok(Object.keys(pruned.memories).length <= 400);
    });
 });
+
+describe('hotness scoring', () => {
+   it('returns high score for fresh, frequent, project-matched memory', async () => {
+      const { calculateHotness } = await import('../src/memory/hotness.mjs');
+      const score = calculateHotness({
+         lastAccessed: Date.now(),
+         active_count: 10,
+         projects: ['/my/project'],
+         category: 'cases',
+      }, { maxActiveCount: 10, currentProject: '/my/project' });
+      assert.ok(score > 0.9);
+   });
+
+   it('returns low score for old, unused, unrelated memory', async () => {
+      const { calculateHotness } = await import('../src/memory/hotness.mjs');
+      const score = calculateHotness({
+         lastAccessed: Date.now() - 90 * 24 * 60 * 60 * 1000,
+         active_count: 1,
+         projects: ['/other/project'],
+         category: 'events',
+      }, { maxActiveCount: 100, currentProject: '/my/project' });
+      assert.ok(score < 0.2);
+   });
+
+   it('applies correct category weights', async () => {
+      const { CATEGORY_WEIGHTS } = await import('../src/memory/hotness.mjs');
+      assert.equal(CATEGORY_WEIGHTS.cases, 0.8);
+      assert.equal(CATEGORY_WEIGHTS.preferences, 0.7);
+      assert.equal(CATEGORY_WEIGHTS.profile, 0.5);
+   });
+
+   it('recalculateAll updates all memory hotness values', async () => {
+      const { recalculateAll } = await import('../src/memory/hotness.mjs');
+      const index = {
+         memories: {
+            'profile/a': { lastAccessed: Date.now(), active_count: 5, projects: ['/p'], category: 'profile' },
+            'cases/b': { lastAccessed: Date.now() - 30*24*60*60*1000, active_count: 1, projects: [], category: 'cases' },
+         },
+         sessions: {},
+      };
+      const result = recalculateAll(index, '/p');
+      assert.ok(typeof result.memories['profile/a'].hotness === 'number');
+      assert.ok(typeof result.memories['cases/b'].hotness === 'number');
+      assert.ok(result.memories['profile/a'].hotness > result.memories['cases/b'].hotness);
+   });
+});
