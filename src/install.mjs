@@ -6,10 +6,22 @@
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { createInterface } from 'readline';
 import { CLAUDE_DIR, COMMANDS_DIR, SCRIPTS_DIR, SETTINGS_FILE, HISTORY_FILE, SESSION_INDEX, MEMORY_DIR, MEMORIES_DIR, MEMORY_INDEX, PROJECTS_DIR, ensureClaudeDir } from './config.mjs';
 import { t } from './i18n.mjs';
 import { migrateSessionIndex, generateL0ForExistingSessions } from './memory/migrate.mjs';
 import { writeIndex } from './memory/index.mjs';
+import { enableMemory } from './enable-memory.mjs';
+
+function askYesNo(question) {
+   return new Promise((resolve) => {
+      const rl = createInterface({ input: process.stdin, output: process.stdout });
+      rl.question(question, (answer) => {
+         rl.close();
+         resolve(answer.trim().toLowerCase() === 'y');
+      });
+   });
+}
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..');
@@ -225,7 +237,24 @@ export default async function install() {
       if (l0Count > 0) writeIndex(MEMORY_INDEX, index);
       console.log(`\n   ${t('memoryMigrated', Object.keys(index.sessions).length, l0Count)}`);
    }
-   console.log(`\n   💡 ${t('memoryEnableLater')}`);
+   // Ask to enable Claude memory integration (interactive mode only)
+   if (!isAuto) {
+      console.log('');
+      console.log(`   ${t('memoryPrompt')}`);
+      console.log(`   This will:`);
+      console.log(`     - Add a SessionStart hook to load relevant memories`);
+      console.log(`     - Add instructions to ~/.claude/CLAUDE.md`);
+      console.log('');
+      const yes = await askYesNo('   Enable memory integration? [y/N]: ');
+      if (yes) {
+         enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: SCRIPTS_DIR });
+         console.log(`\n   ✅ ${t('memoryEnabled')}`);
+      } else {
+         console.log(`\n   💡 ${t('memoryEnableLater')}`);
+      }
+   } else {
+      console.log(`\n   💡 ${t('memoryEnableLater')}`);
+   }
 
    console.log(`\n✅ ${t('installComplete')}\n`);
    console.log(`${t('usage')}`);
