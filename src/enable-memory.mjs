@@ -26,7 +26,8 @@ export function enableMemory({ settingsPath, claudeMdPath, scriptsDir }) {
    );
    if (!exists) {
       settings.hooks.SessionStart.push({
-         hooks: [{ type: 'command', command: hookCmd }],
+         type: 'command',
+         command: hookCmd,
       });
    }
    writeFileSync(settingsPath, JSON.stringify(settings, null, 2));

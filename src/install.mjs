@@ -58,16 +58,59 @@ function installCommands() {
 }
 
 /**
- * Copy helper script save-summary.mjs
+ * Copy hook scripts to ~/.claude/scripts/
+ * Compares content and updates only when changed.
  */
 function installScripts() {
-   const saveSummary = join(PKG_ROOT, 'src', 'save-summary-hook.mjs');
-   const dest = join(SCRIPTS_DIR, 'save-summary.mjs');
+   const scripts = [
+      { src: 'save-summary-hook.mjs', dest: 'save-summary.mjs' },
+      { src: 'save-session-summary.mjs', dest: 'save-session-summary.mjs' },
+      { src: 'session-start-hook.mjs', dest: 'session-start-hook.mjs' },
+   ];
 
-   if (existsSync(saveSummary) && !existsSync(dest)) {
-      copyFileSync(saveSummary, dest);
-      if (!isAuto) console.log(`   ✅ ${t('saveSummaryCopied')}`);
+   for (const s of scripts) {
+      const srcPath = join(PKG_ROOT, 'src', s.src);
+      const destPath = join(SCRIPTS_DIR, s.dest);
+      if (!existsSync(srcPath)) continue;
+
+      if (existsSync(destPath)) {
+         const srcContent = readFileSync(srcPath, 'utf8');
+         const destContent = readFileSync(destPath, 'utf8');
+         if (srcContent === destContent) {
+            if (!isAuto) console.log(`   ⏭  ${s.dest} — ${t('alreadyExists')}`);
+            continue;
+         }
+         copyFileSync(srcPath, destPath);
+         if (!isAuto) console.log(`   🔄 ${s.dest} — updated`);
+      } else {
+         copyFileSync(srcPath, destPath);
+         if (!isAuto) console.log(`   ✅ ${s.dest}`);
+      }
    }
+}
+
+/**
+ * Fix hook entries with wrong nested format {hooks: [...]} -> {type, command}
+ */
+function migrateHookFormat(settings) {
+   let changed = false;
+   for (const hookType of Object.keys(settings.hooks || {})) {
+      const arr = settings.hooks[hookType];
+      if (!Array.isArray(arr)) continue;
+      for (let i = 0; i < arr.length; i++) {
+         const entry = arr[i];
+         if (entry.hooks && Array.isArray(entry.hooks) && entry.hooks.length > 0 && !entry.type) {
+            // Unwrap: replace {hooks: [{type, command}]} with {type, command}
+            const inner = entry.hooks[0];
+            if (inner.type && inner.command) {
+               arr[i] = { ...inner };
+               if (entry.matcher) arr[i].matcher = entry.matcher;
+               changed = true;
+            }
+         }
+      }
+   }
+   return changed;
 }
 
 /**
@@ -86,6 +129,12 @@ function installHook() {
       if (!settings.hooks) settings.hooks = {};
       if (!settings.hooks.Stop) settings.hooks.Stop = [];
 
+      // Fix any wrongly-formatted hook entries from previous versions
+      if (migrateHookFormat(settings)) {
+         writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+         if (!isAuto) console.log(`   🔄 Hook format migrated`);
+      }
+
       // Check if our hook is already installed
       const alreadyInstalled = settings.hooks.Stop.some((entry) => JSON.stringify(entry).includes('save-session-summary'));
 
@@ -94,14 +143,10 @@ function installHook() {
          return;
       }
 
-      // Add hook
+      // Add hook (flat format: {type, command})
       settings.hooks.Stop.push({
-         hooks: [
-            {
-               type: 'command',
-               command: `node ${join(SCRIPTS_DIR, 'save-session-summary.mjs')}`,
-            },
-         ],
+         type: 'command',
+         command: `node ${join(SCRIPTS_DIR, 'save-session-summary.mjs')}`,
       });
 
       writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
