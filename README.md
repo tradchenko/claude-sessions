@@ -17,6 +17,33 @@ Interactive session manager for [Claude Code](https://docs.anthropic.com/en/docs
 - **Cross-platform** — macOS, Linux, Windows (WSL)
 - **Zero dependencies** — pure Node.js, no external packages
 
+## Memory System
+
+The memory system automatically extracts and organizes knowledge from your Claude Code sessions.
+
+**Three layers:**
+- **L0** — Quick summary extracted on session end (no LLM, instant)
+- **L1** — Structured memories extracted via Claude CLI in background
+- **L2** — Original session JSONL files
+
+**Six categories:** profile, preferences, entities, events, cases, patterns
+
+**Hotness scoring** ranks memories by recency, frequency of use, and project relevance.
+
+**Auto-extraction:** Stop hook extracts L0 instantly, spawns background L1 process. Lazy fallback catches anything missed.
+
+**Commands:**
+```
+claude-sessions memory-status    # Show memory stats
+claude-sessions memory-search <q> # Search memories
+claude-sessions extract-memory   # Manual extraction
+claude-sessions enable-memory    # Enable Claude integration
+claude-sessions disable-memory   # Disable Claude integration
+```
+
+**Claude integration (opt-in):**
+When enabled, a SessionStart hook loads relevant memories into Claude's context automatically. Run `claude-sessions enable-memory` to activate.
+
 ## Quick start
 
 ```bash
