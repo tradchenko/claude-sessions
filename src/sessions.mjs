@@ -96,7 +96,7 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
 /**
  * Loads/saves summary index
  */
-export function readIndex() {
+export function readSessionIndex() {
    // Try new unified index first
    try {
       const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8'));
@@ -122,7 +122,7 @@ export function checkPendingExtractions(index) {
       .map(([id]) => id);
 }
 
-export function writeIndex(index) {
+export function writeSessionIndex(index) {
    // Limit to 200 entries
    const entries = Object.entries(index);
    if (entries.length > 200) {

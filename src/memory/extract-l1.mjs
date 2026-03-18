@@ -1,4 +1,4 @@
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { readIndex, writeIndex, acquireLock, releaseLock } from './index.mjs';
@@ -139,11 +139,15 @@ async function main() {
       if (!claudeCli) throw new Error('Claude CLI not found');
 
       const prompt = buildExtractionPrompt(messages);
-      const result = execFileSync(claudeCli, ['--model', model, '--print', '--output-format', 'text', prompt], {
+      const proc = spawnSync(claudeCli, ['--model', model, '--print', '--output-format', 'text'], {
+         input: prompt,
          timeout: EXTRACTION_TIMEOUT,
          encoding: 'utf8',
          maxBuffer: 1024 * 1024,
       });
+      if (proc.error) throw proc.error;
+      if (proc.status !== 0) throw new Error(proc.stderr || 'Claude CLI failed');
+      const result = proc.stdout;
 
       const candidates = parseLLMResponse(result);
 
