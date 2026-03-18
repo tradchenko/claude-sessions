@@ -301,18 +301,33 @@ export default async function picker(args = []) {
          const s = p.getSelected();
          if (s) {
             cleanup();
-            console.log(`\n▶ claude --resume ${s.id}\n`);
-            try {
-               execFileSync('claude', ['--resume', s.id], { stdio: 'inherit' });
-            } catch (e) {
-               const output = e.stderr?.toString() || e.stdout?.toString() || '';
-               if (output.includes('No conversation found') || e.status === 1) {
-                  console.log(`\n${t('sessionNotFound')}\n`);
+            // Проверяем доступна ли сессия через claude --resume
+            // Claude хранит данные сессий в projects/{dir}/{id}.jsonl
+            // Но --resume работает только с "живыми" сессиями
+            // Проверяем: если в sessions/ нет файла — сессия "мертва"
+            const sessionsDir = join(CLAUDE_DIR, 'sessions');
+            let isAlive = false;
+            if (existsSync(sessionsDir)) {
+               for (const f of readdirSync(sessionsDir)) {
+                  if (!f.endsWith('.json')) continue;
                   try {
-                     const restorePath = join(__dirname, 'restore.mjs');
-                     execFileSync('node', [restorePath, s.id], { stdio: 'inherit' });
+                     const data = JSON.parse(readFileSync(join(sessionsDir, f), 'utf8'));
+                     if (data.sessionId === s.id) { isAlive = true; break; }
                   } catch {}
                }
+            }
+
+            if (isAlive) {
+               console.log(`\n▶ claude --resume ${s.id}\n`);
+               try {
+                  execFileSync('claude', ['--resume', s.id], { stdio: 'inherit' });
+               } catch {}
+            } else {
+               console.log(`\n${t('sessionNotFound')}\n`);
+               try {
+                  const restorePath = join(__dirname, 'restore.mjs');
+                  execFileSync('node', [restorePath, s.id], { stdio: 'inherit' });
+               } catch {}
             }
             process.exit(0);
          }

@@ -1,6 +1,6 @@
 {
   "name": "@tradchenko/claude-sessions",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Interactive session manager for Claude Code — TUI picker, search, AI summaries, session restore",
   "type": "module",
   "bin": {

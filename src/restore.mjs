@@ -2,9 +2,10 @@
  * Restore session context from JSONL file
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync } from 'fs';
+import { readFileSync, writeFileSync, readdirSync, existsSync, createReadStream } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
+import { createInterface } from 'readline';
 import { PROJECTS_DIR, SESSION_INDEX, CLAUDE_DIR, findClaudeCli } from './config.mjs';
 import { t } from './i18n.mjs';
 
@@ -21,15 +22,18 @@ function findSessionFile(sessionId) {
 }
 
 /**
- * Extracts conversation from JSONL file
+ * Extracts conversation from JSONL file (streaming, memory-safe)
  */
-function extractConversation(filePath, maxMessages = 50) {
-   const content = readFileSync(filePath, 'utf8');
-   const lines = content.split('\n');
+async function extractConversation(filePath, maxMessages = 50) {
    const messages = [];
+   const rl = createInterface({
+      input: createReadStream(filePath, { encoding: 'utf8' }),
+      crlfDelay: Infinity,
+   });
 
-   for (const line of lines) {
+   for await (const line of rl) {
       if (!line.trim()) continue;
+      if (messages.length >= maxMessages) break;
       try {
          const event = JSON.parse(line);
          if ((event.type === 'user' || event.type === 'assistant') && event.message?.content) {
@@ -64,7 +68,7 @@ function extractConversation(filePath, maxMessages = 50) {
       } catch {}
    }
 
-   return messages.slice(0, maxMessages);
+   return messages;
 }
 
 /**
@@ -99,7 +103,7 @@ export default async function restore(sessionId) {
 
    console.log(`\n📂 ${t('foundFile', found.path)}`);
 
-   const messages = extractConversation(found.path);
+   const messages = await extractConversation(found.path);
    if (messages.length === 0) {
       console.error(`❌ ${t('sessionEmpty')}\n`);
       process.exit(1);
