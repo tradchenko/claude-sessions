@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -283,5 +283,57 @@ describe('deduplication', () => {
       };
       const resolution = resolveCandidate({ name: 'deploy', category: 'events', content: 'Deployed v2 to production on March 15' }, index);
       assert.equal(resolution.action, 'skip');
+   });
+});
+
+describe('stop hook with L0', () => {
+   let tempDir;
+
+   beforeEach(() => {
+      tempDir = mkdtempSync(join(tmpdir(), 'cs-hook-'));
+      mkdirSync(join(tempDir, 'session-memory'), { recursive: true });
+   });
+
+   afterEach(() => {
+      rmSync(tempDir, { recursive: true, force: true });
+   });
+
+   it('writes L0 to memory index on session save', async () => {
+      const { saveSessionWithL0 } = await import('../src/save-session-summary.mjs');
+      const jsonlDir = join(tempDir, 'projects', '-test');
+      mkdirSync(jsonlDir, { recursive: true });
+      const sessionId = 'test-session-123';
+      writeFileSync(join(jsonlDir, sessionId + '.jsonl'),
+         JSON.stringify({ type: 'human', message: { content: 'Fix the login bug' } }) + '\n' +
+         JSON.stringify({ type: 'assistant', message: { content: 'Looking at src/auth.js' } }) + '\n'
+      );
+
+      const indexPath = join(tempDir, 'session-memory', 'index.json');
+      saveSessionWithL0({
+         sessionId,
+         project: '/test',
+         indexPath,
+         projectsDir: join(tempDir, 'projects'),
+      });
+
+      const index = JSON.parse(readFileSync(indexPath, 'utf8'));
+      assert.ok(index.sessions[sessionId]);
+      assert.ok(index.sessions[sessionId].l0);
+      assert.ok(index.sessions[sessionId].l0.summary.includes('Fix the login'));
+   });
+
+   it('handles missing JSONL gracefully', async () => {
+      const { saveSessionWithL0 } = await import('../src/save-session-summary.mjs');
+      const indexPath = join(tempDir, 'session-memory', 'index.json');
+      saveSessionWithL0({
+         sessionId: 'nonexistent-session',
+         project: '/test',
+         indexPath,
+         projectsDir: join(tempDir, 'projects'),
+      });
+
+      const index = JSON.parse(readFileSync(indexPath, 'utf8'));
+      assert.ok(index.sessions['nonexistent-session']);
+      assert.ok(index.sessions['nonexistent-session'].lastActive);
    });
 });
