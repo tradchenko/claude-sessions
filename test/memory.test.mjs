@@ -385,3 +385,38 @@ describe('L1 extraction', () => {
       assert.equal(memories.length, 1);
    });
 });
+
+describe('migration', () => {
+   let tempDir;
+   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), 'cs-migrate-')); });
+   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+   it('migrates session-index.json to new index.json', async () => {
+      const { migrateSessionIndex } = await import('../src/memory/migrate.mjs');
+      const oldIndex = {
+         'session-1': { sessionId: 'session-1', summary: 'Test session', project: '/test', lastActive: Date.now() },
+         'session-2': { sessionId: 'session-2', summary: 'Another', project: '/test2', lastActive: Date.now() - 1000 },
+      };
+      writeFileSync(join(tempDir, 'session-index.json'), JSON.stringify(oldIndex));
+      const newIndex = migrateSessionIndex(join(tempDir, 'session-index.json'), join(tempDir, 'index.json'));
+      assert.equal(newIndex.version, 1);
+      assert.ok(newIndex.sessions['session-1']);
+      assert.equal(newIndex.sessions['session-1'].summary, 'Test session');
+   });
+
+   it('skips migration if index.json already exists', async () => {
+      const { migrateSessionIndex } = await import('../src/memory/migrate.mjs');
+      writeFileSync(join(tempDir, 'index.json'), JSON.stringify({ version: 1, memories: {}, sessions: {} }));
+      writeFileSync(join(tempDir, 'session-index.json'), JSON.stringify({ 's1': { sessionId: 's1' } }));
+      const result = migrateSessionIndex(join(tempDir, 'session-index.json'), join(tempDir, 'index.json'));
+      // Should merge s1 into existing index
+      assert.ok(result.sessions['s1']);
+   });
+
+   it('returns empty index when neither file exists', async () => {
+      const { migrateSessionIndex } = await import('../src/memory/migrate.mjs');
+      const result = migrateSessionIndex(join(tempDir, 'old.json'), join(tempDir, 'new.json'));
+      assert.equal(result.version, 1);
+      assert.deepEqual(result.sessions, {});
+   });
+});

@@ -4,7 +4,7 @@
 
 import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
-import { HISTORY_FILE, SESSION_INDEX, formatDate, shortProjectName } from './config.mjs';
+import { HISTORY_FILE, SESSION_INDEX, MEMORY_INDEX, formatDate, shortProjectName } from './config.mjs';
 import { t } from './i18n.mjs';
 
 /**
@@ -97,11 +97,14 @@ export async function loadSessions({ projectFilter, searchQuery, limit = 100 } =
  * Loads/saves summary index
  */
 export function readIndex() {
-   if (!existsSync(SESSION_INDEX)) return {};
+   // Try new unified index first
    try {
-      return JSON.parse(readFileSync(SESSION_INDEX, 'utf8'));
+      const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8'));
+      return idx.sessions || {};
    } catch {
-      return {};
+      // Fallback to old session-index.json
+      try { return JSON.parse(readFileSync(SESSION_INDEX, 'utf8')); }
+      catch { return {}; }
    }
 }
 
@@ -112,5 +115,14 @@ export function writeIndex(index) {
       entries.sort((a, b) => (b[1].lastActive || 0) - (a[1].lastActive || 0));
       index = Object.fromEntries(entries.slice(0, 200));
    }
+   // Write to legacy SESSION_INDEX for backwards compatibility
    writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
+   // Also update MEMORY_INDEX sessions section if it exists
+   if (existsSync(MEMORY_INDEX)) {
+      try {
+         const unified = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8'));
+         unified.sessions = { ...unified.sessions, ...index };
+         writeFileSync(MEMORY_INDEX, JSON.stringify(unified, null, 2));
+      } catch {}
+   }
 }
