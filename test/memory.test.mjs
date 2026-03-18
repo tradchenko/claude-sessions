@@ -337,3 +337,51 @@ describe('stop hook with L0', () => {
       assert.ok(index.sessions['nonexistent-session'].lastActive);
    });
 });
+
+describe('L1 extraction', () => {
+   it('builds extraction prompt from messages', async () => {
+      const { buildExtractionPrompt } = await import('../src/memory/extract-l1.mjs');
+      const messages = [
+         { role: 'user', content: 'Fix auth bug' },
+         { role: 'assistant', content: 'Fixed by updating token expiry check in src/auth.js' },
+      ];
+      const prompt = buildExtractionPrompt(messages);
+      assert.ok(prompt.includes('Extract structured memories'));
+      assert.ok(prompt.includes('Fix auth bug'));
+      assert.ok(prompt.includes('category'));
+   });
+
+   it('parses valid LLM JSON response', async () => {
+      const { parseLLMResponse } = await import('../src/memory/extract-l1.mjs');
+      const response = JSON.stringify([
+         { category: 'cases', name: 'auth-token-fix', content: 'Fixed token expiry bug' }
+      ]);
+      const memories = parseLLMResponse(response);
+      assert.equal(memories.length, 1);
+      assert.equal(memories[0].category, 'cases');
+   });
+
+   it('handles malformed LLM response', async () => {
+      const { parseLLMResponse } = await import('../src/memory/extract-l1.mjs');
+      const memories = parseLLMResponse('not valid json at all');
+      assert.deepEqual(memories, []);
+   });
+
+   it('filters out invalid categories', async () => {
+      const { parseLLMResponse } = await import('../src/memory/extract-l1.mjs');
+      const response = JSON.stringify([
+         { category: 'cases', name: 'good', content: 'valid' },
+         { category: 'invalid-cat', name: 'bad', content: 'invalid' },
+         { category: 'profile', name: 'also-good', content: 'valid too' },
+      ]);
+      const memories = parseLLMResponse(response);
+      assert.equal(memories.length, 2);
+   });
+
+   it('extracts JSON array from text with surrounding content', async () => {
+      const { parseLLMResponse } = await import('../src/memory/extract-l1.mjs');
+      const response = 'Here are the extracted memories:\n\n[{"category":"cases","name":"test","content":"test content"}]\n\nDone.';
+      const memories = parseLLMResponse(response);
+      assert.equal(memories.length, 1);
+   });
+});
