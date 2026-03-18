@@ -1,11 +1,83 @@
 #!/usr/bin/env node
 // SessionStart hook: outputs memory catalog + hot memories to stdout
+// Self-contained — no imports from package modules (runs from ~/.claude/scripts/)
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
-import { formatSessionStartOutput } from './memory/catalog.mjs';
-import { readIndex } from './memory/index.mjs';
-import { recalculateAll } from './memory/hotness.mjs';
+
+const CATEGORY_WEIGHTS = {
+   profile: 0.5, preferences: 0.7, entities: 0.4,
+   events: 0.3, cases: 0.8, patterns: 0.6,
+};
+const DECAY_TAU_DAYS = 30;
+const MAX_CATALOG_ENTRIES = 30;
+const MAX_HOT_CONTENT_CHARS = 3000;
+
+function readIndex(indexPath) {
+   try {
+      return JSON.parse(readFileSync(indexPath, 'utf8'));
+   } catch {
+      return { version: 1, memories: {}, sessions: {} };
+   }
+}
+
+function calculateHotness(memory, context) {
+   const { lastAccessed = Date.now(), active_count = 0, projects = [], category = 'cases' } = memory;
+   const { maxActiveCount = 1, currentProject = '' } = context;
+   const daysSince = (Date.now() - lastAccessed) / (1000 * 60 * 60 * 24);
+   const recencyScore = Math.exp(-daysSince / DECAY_TAU_DAYS);
+   const frequencyScore = maxActiveCount > 0 ? Math.min(active_count / maxActiveCount, 1.0) : 0;
+   const projectMatch = projects.includes(currentProject) ? 1.0 : (projects.length === 0 ? 0.3 : 0.0);
+   const categoryWeight = CATEGORY_WEIGHTS[category] || 0.5;
+   const relevanceScore = projectMatch * 0.6 + categoryWeight * 0.4;
+   return recencyScore * 0.3 + frequencyScore * 0.4 + relevanceScore * 0.3;
+}
+
+function recalculateAll(index, currentProject) {
+   const memories = Object.values(index.memories || {});
+   const maxActiveCount = Math.max(1, ...memories.map(m => m.active_count || 0));
+   for (const mem of Object.values(index.memories || {})) {
+      mem.hotness = calculateHotness(mem, { maxActiveCount, currentProject });
+   }
+   return index;
+}
+
+function generateCatalog(index) {
+   const entries = Object.values(index.memories || {})
+      .sort((a, b) => (b.hotness || 0) - (a.hotness || 0))
+      .slice(0, MAX_CATALOG_ENTRIES);
+   if (entries.length === 0) return '(no memories yet)';
+   const lines = ['| name | category | hotness | description |', '|------|----------|---------|-------------|'];
+   for (const m of entries) {
+      lines.push(`| ${m.name} | ${m.category} | ${(m.hotness || 0).toFixed(2)} | ${(m.description || '').slice(0, 50)} |`);
+   }
+   return lines.join('\n');
+}
+
+function selectHotMemories(index, currentProject, count = 5) {
+   return Object.values(index.memories || {})
+      .filter(m => !currentProject || (m.projects || []).includes(currentProject) || (m.projects || []).length === 0)
+      .sort((a, b) => (b.hotness || 0) - (a.hotness || 0))
+      .slice(0, count);
+}
+
+function formatSessionStartOutput(index, currentProject) {
+   const catalog = generateCatalog(index);
+   const hot = selectHotMemories(index, currentProject, 5);
+   let output = `# Session Memory (auto-loaded)\n\n## Memory Catalog\n${catalog}\n`;
+   if (hot.length > 0) {
+      output += `\n## Hot Memories for ${currentProject || 'global'}\n\n`;
+      let hotLen = 0;
+      for (const m of hot) {
+         const text = m.content || m.description || '';
+         if (hotLen + text.length > MAX_HOT_CONTENT_CHARS) break;
+         output += `### ${m.name} (${m.category})\n${text}\n\n`;
+         hotLen += text.length;
+      }
+   }
+   output += `\nTo load more: read files from ~/.claude/session-memory/memories/{category}/{name}.md\n`;
+   return output;
+}
 
 try {
    let input = '';

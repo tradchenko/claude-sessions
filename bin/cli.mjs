@@ -118,8 +118,8 @@ switch (command) {
 
    case 'enable-memory': {
       const { enableMemory } = await import(join(srcDir, 'enable-memory.mjs'));
-      const { SETTINGS_FILE, CLAUDE_DIR, SCRIPTS_DIR } = await import(join(srcDir, 'config.mjs'));
-      enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: SCRIPTS_DIR });
+      const { SETTINGS_FILE, CLAUDE_DIR } = await import(join(srcDir, 'config.mjs'));
+      enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: srcDir });
       console.log('Memory integration enabled.');
       break;
    }

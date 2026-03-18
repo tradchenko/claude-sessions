@@ -1,6 +1,9 @@
 /**
  * Install slash commands, hooks and scripts to ~/.claude/
  * Safe: does not overwrite existing settings, only adds to them.
+ *
+ * Hook scripts run directly from the package directory (not copied to scripts/).
+ * This ensures imports resolve correctly and updates are automatic.
  */
 
 import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync } from 'fs';
@@ -26,12 +29,13 @@ function askYesNo(question) {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..');
+const PKG_SRC = join(PKG_ROOT, 'src');
 const PKG_COMMANDS = join(PKG_ROOT, 'claude-commands');
 
 const isAuto = process.argv.includes('--auto');
 
 /**
- * Copy slash commands
+ * Copy slash commands — compare content, update if changed.
  */
 function installCommands() {
    const commands = [
@@ -65,18 +69,16 @@ function installCommands() {
 }
 
 /**
- * Copy hook scripts to ~/.claude/scripts/
- * Compares content and updates only when changed.
+ * Copy helper scripts to ~/.claude/scripts/ (only small standalone helpers).
+ * Main hook scripts run from the package directly — no copy needed.
  */
 function installScripts() {
    const scripts = [
       { src: 'save-summary-hook.mjs', dest: 'save-summary.mjs' },
-      { src: 'save-session-summary.mjs', dest: 'save-session-summary.mjs' },
-      { src: 'session-start-hook.mjs', dest: 'session-start-hook.mjs' },
    ];
 
    for (const s of scripts) {
-      const srcPath = join(PKG_ROOT, 'src', s.src);
+      const srcPath = join(PKG_SRC, s.src);
       const destPath = join(SCRIPTS_DIR, s.dest);
       if (!existsSync(srcPath)) continue;
 
@@ -97,21 +99,36 @@ function installScripts() {
 }
 
 /**
- * Fix hook entries with wrong nested format {hooks: [...]} -> {type, command}
+ * Fix hook entries: wrong format and stale paths.
+ * - Unwrap nested {hooks: [...]} to flat {type, command}
+ * - Update paths pointing to ~/.claude/scripts/ to point to package src/
  */
-function migrateHookFormat(settings) {
+function migrateHooks(settings) {
    let changed = false;
+   const staleScripts = ['save-session-summary.mjs', 'session-start-hook.mjs'];
+
    for (const hookType of Object.keys(settings.hooks || {})) {
       const arr = settings.hooks[hookType];
       if (!Array.isArray(arr)) continue;
+
       for (let i = 0; i < arr.length; i++) {
          const entry = arr[i];
+
+         // Fix nested format: {hooks: [{type, command}]} -> {type, command}
          if (entry.hooks && Array.isArray(entry.hooks) && entry.hooks.length > 0 && !entry.type) {
-            // Unwrap: replace {hooks: [{type, command}]} with {type, command}
             const inner = entry.hooks[0];
             if (inner.type && inner.command) {
                arr[i] = { ...inner };
                if (entry.matcher) arr[i].matcher = entry.matcher;
+               changed = true;
+            }
+         }
+
+         // Fix stale paths: ~/.claude/scripts/X.mjs -> package/src/X.mjs
+         const cmd = arr[i].command || '';
+         for (const script of staleScripts) {
+            if (cmd.includes(join(SCRIPTS_DIR, script))) {
+               arr[i].command = `node ${join(PKG_SRC, script)}`;
                changed = true;
             }
          }
@@ -122,7 +139,7 @@ function migrateHookFormat(settings) {
 
 /**
  * Add Stop hook for auto-saving session metadata.
- * Safe: does not touch existing hooks.
+ * Points directly to package src/ — no copy needed.
  */
 function installHook() {
    if (!existsSync(SETTINGS_FILE)) {
@@ -136,10 +153,10 @@ function installHook() {
       if (!settings.hooks) settings.hooks = {};
       if (!settings.hooks.Stop) settings.hooks.Stop = [];
 
-      // Fix any wrongly-formatted hook entries from previous versions
-      if (migrateHookFormat(settings)) {
+      // Fix wrongly-formatted or stale hook entries
+      if (migrateHooks(settings)) {
          writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
-         if (!isAuto) console.log(`   🔄 Hook format migrated`);
+         if (!isAuto) console.log(`   🔄 Hooks migrated`);
       }
 
       // Check if our hook is already installed
@@ -150,29 +167,16 @@ function installHook() {
          return;
       }
 
-      // Add hook (flat format: {type, command})
+      // Add hook pointing to package source
       settings.hooks.Stop.push({
          type: 'command',
-         command: `node ${join(SCRIPTS_DIR, 'save-session-summary.mjs')}`,
+         command: `node ${join(PKG_SRC, 'save-session-summary.mjs')}`,
       });
 
       writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
       if (!isAuto) console.log(`   ✅ ${t('stopHookInstalled')}`);
    } catch (e) {
       if (!isAuto) console.log(`   ⚠️  ${t('failedSettings', e.message)}`);
-   }
-}
-
-/**
- * Copy save-session-summary.mjs
- */
-function installSaveHookScript() {
-   const src = join(PKG_ROOT, 'src', 'save-session-summary.mjs');
-   const dest = join(SCRIPTS_DIR, 'save-session-summary.mjs');
-
-   if (!existsSync(dest) && existsSync(src)) {
-      copyFileSync(src, dest);
-      if (!isAuto) console.log(`   ✅ ${t('saveSessionSummaryCopied')}`);
    }
 }
 
@@ -271,7 +275,6 @@ export default async function install() {
 
    console.log(`\n   ${t('scripts')}`);
    installScripts();
-   installSaveHookScript();
 
    console.log(`\n   ${t('hooks')}`);
    installHook();
@@ -290,6 +293,7 @@ export default async function install() {
       if (l0Count > 0) writeIndex(MEMORY_INDEX, index);
       console.log(`\n   ${t('memoryMigrated', Object.keys(index.sessions).length, l0Count)}`);
    }
+
    // Ask to enable Claude memory integration (interactive mode only)
    if (!isAuto) {
       console.log('');
@@ -300,7 +304,7 @@ export default async function install() {
       console.log('');
       const yes = await askYesNo('   Enable memory integration? [Y/n]: ');
       if (yes) {
-         enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: SCRIPTS_DIR });
+         enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: PKG_SRC });
          console.log(`\n   ✅ ${t('memoryEnabled')}`);
       } else {
          console.log(`\n   💡 ${t('memoryEnableLater')}`);
