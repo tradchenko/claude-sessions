@@ -369,7 +369,9 @@ export default async function picker(args = []) {
          console.log(`\n${t('launchingAI')}\n`);
          try {
             execFileSync('node', [summarizePath], { stdio: 'inherit' });
-         } catch {}
+         } catch (e) {
+            console.error(`\n❌ ${e.message || 'Summarization failed'}`);
+         }
          process.exit(0);
       }
 
