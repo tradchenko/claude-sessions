@@ -111,8 +111,48 @@ switch (command) {
    }
 
    case 'extract-memory': {
-      // TODO: Will be enhanced in Task 15 with lazy extraction
-      console.log('Memory extraction triggered manually.');
+      const { readIndex } = await import(join(srcDir, 'memory', 'index.mjs'));
+      const { MEMORY_INDEX, PROJECTS_DIR: projDir } = await import(join(srcDir, 'config.mjs'));
+      const { checkPendingExtractions } = await import(join(srcDir, 'sessions.mjs'));
+      const { spawnSync } = await import('child_process');
+
+      const index = readIndex(MEMORY_INDEX);
+      const extractScript = join(srcDir, 'memory', 'extract-l1.mjs');
+
+      let sessionIds;
+      if (args.includes('--all')) {
+         sessionIds = checkPendingExtractions(index);
+      } else if (args[0] && !args[0].startsWith('-')) {
+         sessionIds = [args[0]];
+      } else {
+         sessionIds = checkPendingExtractions(index).slice(0, 5);
+      }
+
+      if (sessionIds.length === 0) {
+         console.log('✅ No sessions pending L1 extraction.');
+         break;
+      }
+
+      console.log(`Extracting memories from ${sessionIds.length} sessions...\n`);
+      let success = 0;
+      let failed = 0;
+      for (const sid of sessionIds) {
+         const project = index.sessions[sid]?.project || index.sessions[sid]?.l0?.project || '';
+         process.stdout.write(`  ${sid.slice(0, 8)}... `);
+         const proc = spawnSync(process.execPath, [extractScript, sid, project], {
+            encoding: 'utf8',
+            timeout: 120_000,
+            env: { ...process.env, MEMORY_DIR: join(MEMORY_INDEX, '..'), PROJECTS_DIR: projDir },
+         });
+         if (proc.status === 0) {
+            console.log('✅');
+            success++;
+         } else {
+            console.log('❌');
+            failed++;
+         }
+      }
+      console.log(`\nDone: ${success} extracted, ${failed} failed.`);
       break;
    }
 
