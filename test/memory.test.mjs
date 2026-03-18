@@ -480,6 +480,44 @@ describe('enable/disable memory', () => {
    });
 });
 
+describe('CLI memory commands', () => {
+   it('formatMemoryStatus outputs stats', async () => {
+      const { formatMemoryStatus } = await import('../src/memory-status.mjs');
+      const index = {
+         version: 1,
+         memories: {
+            'profile/a': { name: 'a', category: 'profile', hotness: 0.9, description: 'test' },
+            'cases/b': { name: 'b', category: 'cases', hotness: 0.5, description: 'test2' },
+         },
+         sessions: { 's1': {}, 's2': {}, 's3': {} },
+      };
+      const output = formatMemoryStatus(index);
+      assert.ok(output.includes('2')); // 2 memories
+      assert.ok(output.includes('3')); // 3 sessions
+      assert.ok(output.includes('profile'));
+   });
+
+   it('searchMemories finds by keyword', async () => {
+      const { searchMemories } = await import('../src/memory-search.mjs');
+      const index = {
+         memories: {
+            'cases/auth-fix': { name: 'auth-fix', category: 'cases', content: 'Fixed auth token expiry', description: 'Auth fix', hotness: 0.8 },
+            'patterns/early-return': { name: 'early-return', category: 'patterns', content: 'Prefer early returns', description: 'Early returns', hotness: 0.5 },
+         }
+      };
+      const results = searchMemories(index, 'auth');
+      assert.equal(results.length, 1);
+      assert.equal(results[0].name, 'auth-fix');
+   });
+
+   it('searchMemories returns empty for no match', async () => {
+      const { searchMemories } = await import('../src/memory-search.mjs');
+      const index = { memories: { 'cases/a': { name: 'a', content: 'hello' } } };
+      const results = searchMemories(index, 'nonexistent');
+      assert.equal(results.length, 0);
+   });
+});
+
 describe('catalog generation', () => {
    it('generates compact catalog table', async () => {
       const { generateCatalog } = await import('../src/memory/catalog.mjs');
