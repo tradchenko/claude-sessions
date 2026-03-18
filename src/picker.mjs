@@ -366,11 +366,16 @@ export default async function picker(args = []) {
       // Ctrl-A — AI summaries
       if (key === '\x01') {
          cleanup();
+         process.stdin.removeAllListeners('data');
+         process.stdin.pause();
          console.log(`\n${t('launchingAI')}\n`);
          import('./summarize.mjs')
             .then(({ default: summarize }) => summarize([]))
             .catch((e) => console.error(`\n❌ ${e.message || 'Summarization failed'}`))
-            .finally(() => process.exit(0));
+            .finally(() => {
+               // Restart picker with refreshed sessions
+               picker(args).catch(() => process.exit(1));
+            });
          return;
       }
 
