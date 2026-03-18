@@ -48,7 +48,14 @@ function installCommands() {
       if (!existsSync(src)) continue;
 
       if (existsSync(dest)) {
-         if (!isAuto) console.log(`   ⏭  ${cmd.desc} — ${t('alreadyExists')}`);
+         const srcContent = readFileSync(src, 'utf8');
+         const destContent = readFileSync(dest, 'utf8');
+         if (srcContent === destContent) {
+            if (!isAuto) console.log(`   ⏭  ${cmd.desc} — ${t('alreadyExists')}`);
+            continue;
+         }
+         copyFileSync(src, dest);
+         if (!isAuto) console.log(`   🔄 ${cmd.desc} — updated`);
          continue;
       }
 
