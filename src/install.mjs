@@ -24,6 +24,8 @@ function installCommands() {
    const commands = [
       { file: 'sessions.md', desc: t('cmdSessionsDesc') },
       { file: 'session-summarize.md', desc: t('cmdSummarizeDesc') },
+      { file: 'memory-recall.md', desc: t('cmdMemoryRecallDesc') },
+      { file: 'memory-status.md', desc: t('cmdMemoryStatusDesc') },
    ];
 
    for (const cmd of commands) {
