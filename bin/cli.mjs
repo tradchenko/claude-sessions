@@ -148,6 +148,11 @@ Commands:
   restore <id>         Restore session from JSONL
   install              Install slash commands and hooks
   uninstall            Remove slash commands and hooks
+  memory-status (ms)   Show memory system status
+  memory-search <q>    Search memories by keyword
+  extract-memory       Trigger memory extraction
+  enable-memory        Enable Claude memory integration
+  disable-memory       Disable Claude memory integration
 
 Options for list:
   --project <name>     Filter by project

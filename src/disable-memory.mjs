@@ -6,7 +6,7 @@ export function disableMemory({ settingsPath, claudeMdPath }) {
       const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
       if (settings.hooks?.SessionStart) {
          settings.hooks.SessionStart = settings.hooks.SessionStart
-            .filter(h => !h.command?.includes('session-start-hook'));
+            .filter(h => !JSON.stringify(h).includes('session-start-hook'));
       }
       writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
    }

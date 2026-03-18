@@ -434,7 +434,7 @@ describe('enable/disable memory', () => {
       const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
       assert.ok(settings.hooks.SessionStart);
       assert.ok(settings.hooks.SessionStart.length > 0);
-      assert.ok(settings.hooks.SessionStart[0].command.includes('session-start-hook'));
+      assert.ok(JSON.stringify(settings.hooks.SessionStart[0]).includes('session-start-hook'));
    });
 
    it('enableMemory adds section to CLAUDE.md', async () => {

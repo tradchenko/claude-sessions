@@ -7,6 +7,15 @@ import { serializeMemory } from './format.mjs';
 import { readMemoryConfig } from './config.mjs';
 
 const VALID_CATEGORIES = ['profile', 'preferences', 'entities', 'events', 'cases', 'patterns'];
+
+// Sanitize LLM-generated names for safe use in file paths and index keys
+function sanitizeName(name) {
+   return name
+      .replace(/[^a-z0-9-]/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '')
+      .slice(0, 50) || 'unnamed';
+}
 const EXTRACTION_TIMEOUT = 60_000;
 const HEAD_COUNT = 15;
 const TAIL_COUNT = 35;
@@ -152,6 +161,7 @@ async function main() {
       const candidates = parseLLMResponse(result);
 
       for (const candidate of candidates) {
+         candidate.name = sanitizeName(candidate.name);
          const resolution = resolveCandidate(candidate, index);
          if (resolution.action === 'skip') continue;
          if (resolution.action === 'fuzzy') continue; // Skip fuzzy in background — safer

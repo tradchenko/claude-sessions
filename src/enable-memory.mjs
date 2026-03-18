@@ -21,9 +21,13 @@ export function enableMemory({ settingsPath, claudeMdPath, scriptsDir }) {
    if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
 
    const hookCmd = `node ${join(scriptsDir, 'session-start-hook.mjs')}`;
-   const exists = settings.hooks.SessionStart.some(h => h.command?.includes('session-start-hook'));
+   const exists = settings.hooks.SessionStart.some(h =>
+      JSON.stringify(h).includes('session-start-hook')
+   );
    if (!exists) {
-      settings.hooks.SessionStart.push({ type: 'command', command: hookCmd });
+      settings.hooks.SessionStart.push({
+         hooks: [{ type: 'command', command: hookCmd }],
+      });
    }
    writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
 

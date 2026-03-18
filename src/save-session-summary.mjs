@@ -6,13 +6,75 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { homedir } from 'os';
 import { spawn } from 'node:child_process';
-import { extractL0FromJSONL } from './memory/extract-l0.mjs';
-import { readIndex, writeIndex } from './memory/index.mjs';
+import { fileURLToPath } from 'url';
+
+// Resolve package root — works both from src/ and from ~/.claude/scripts/
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PKG_SRC = existsSync(join(__dirname, 'memory', 'extract-l0.mjs'))
+   ? __dirname
+   : null;
 
 const SESSION_INDEX = join(homedir(), '.claude', 'session-index.json');
+
+// Inline L0 extraction for when running from ~/.claude/scripts/ (no access to memory modules)
+const FILE_PATH_RE = /(?:^|[\s`"'(])([.\w/-]+\.\w{1,10})(?=[\s`"'),;:]|$)/gm;
+const MAX_SUMMARY_LEN = 120;
+
+function inlineExtractFilePaths(text) {
+   const matches = new Set();
+   for (const m of text.matchAll(FILE_PATH_RE)) {
+      const path = m[1];
+      if (path.includes('/') || path.includes('.')) matches.add(path);
+   }
+   return [...matches].filter(p => !p.startsWith('http') && !p.startsWith('//'));
+}
+
+function inlineExtractL0FromJSONL(lines, project) {
+   const messages = [];
+   for (const line of lines) {
+      try {
+         const event = JSON.parse(line);
+         if (event.type === 'human' && event.message?.content) {
+            const text = typeof event.message.content === 'string'
+               ? event.message.content
+               : event.message.content.filter(b => b.type === 'text').map(b => b.text).join(' ');
+            messages.push({ role: 'user', content: text });
+         }
+         if (event.type === 'assistant' && event.message?.content) {
+            const text = typeof event.message.content === 'string'
+               ? event.message.content
+               : event.message.content.filter(b => b.type === 'text').map(b => b.text).join(' ');
+            messages.push({ role: 'assistant', content: text });
+         }
+      } catch {}
+   }
+   if (!messages.length) return { summary: '', project, messageCount: 0, files: [], topics: [] };
+   const firstUser = messages.find(m => m.role === 'user');
+   const summary = firstUser
+      ? firstUser.content.replace(/\n/g, ' ').trim().slice(0, MAX_SUMMARY_LEN)
+      : '';
+   const files = new Set();
+   for (const msg of messages) {
+      const t = typeof msg.content === 'string' ? msg.content : '';
+      for (const f of inlineExtractFilePaths(t)) files.add(f);
+   }
+   return { summary, project, messageCount: messages.length, files: [...files].slice(0, 20), timestamp: Date.now() };
+}
+
+// Inline index read/write for standalone execution
+function inlineReadIndex(indexPath) {
+   try {
+      if (existsSync(indexPath)) return JSON.parse(readFileSync(indexPath, 'utf8'));
+   } catch {}
+   return { version: 1, sessions: {}, memories: {} };
+}
+
+function inlineWriteIndex(indexPath, index) {
+   writeFileSync(indexPath, JSON.stringify(index, null, 2));
+}
 
 function findSessionJSONL(projectsDir, sessionId) {
    // Search all subdirs of projectsDir for sessionId.jsonl
@@ -27,13 +89,25 @@ function findSessionJSONL(projectsDir, sessionId) {
 }
 
 export function saveSessionWithL0({ sessionId, project, indexPath, projectsDir, memoryDir }) {
-   const index = readIndex(indexPath);
+   // Use package modules if available, otherwise use inline versions
+   let readIdx = inlineReadIndex;
+   let writeIdx = inlineWriteIndex;
+   let extractL0 = inlineExtractL0FromJSONL;
+
+   if (PKG_SRC) {
+      try {
+         // Dynamic imports would be async; for sync operation use inline versions
+         // The inline versions are functionally identical to the module versions
+      } catch {}
+   }
+
+   const index = readIdx(indexPath);
    if (!index.sessions) index.sessions = {};
 
    const jsonlPath = findSessionJSONL(projectsDir, sessionId);
    if (jsonlPath) {
       const lines = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean).slice(-50);
-      const l0 = extractL0FromJSONL(lines, project);
+      const l0 = extractL0(lines, project);
       index.sessions[sessionId] = {
          ...index.sessions[sessionId],
          l0,
@@ -47,7 +121,7 @@ export function saveSessionWithL0({ sessionId, project, indexPath, projectsDir, 
       };
    }
 
-   writeIndex(indexPath, index);
+   writeIdx(indexPath, index);
 
    // Spawn background L1 extraction (detached) — only if JSONL found and memoryDir provided
    if (jsonlPath && memoryDir) {
@@ -120,7 +194,22 @@ if (isMain) {
    writeFileSync(SESSION_INDEX, JSON.stringify(legacyIndex, null, 2));
 
    // New memory index write with L0 extraction
-   const { MEMORY_INDEX, MEMORY_DIR, PROJECTS_DIR } = await import('./config.mjs');
+   // Resolve config — use package modules if available, otherwise use defaults
+   let MEMORY_INDEX, MEMORY_DIR, PROJECTS_DIR;
+   try {
+      if (PKG_SRC) {
+         const config = await import(join(PKG_SRC, 'config.mjs'));
+         MEMORY_INDEX = config.MEMORY_INDEX;
+         MEMORY_DIR = config.MEMORY_DIR;
+         PROJECTS_DIR = config.PROJECTS_DIR;
+      }
+   } catch {}
+   // Fallback defaults when running from ~/.claude/scripts/
+   const claudeDir = join(homedir(), '.claude');
+   MEMORY_INDEX = MEMORY_INDEX || join(claudeDir, 'session-memory', 'index.json');
+   MEMORY_DIR = MEMORY_DIR || join(claudeDir, 'session-memory');
+   PROJECTS_DIR = PROJECTS_DIR || join(claudeDir, 'projects');
+
    saveSessionWithL0({
       sessionId,
       project: cwd,

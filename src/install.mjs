@@ -223,9 +223,9 @@ export default async function install() {
       const index = migrateSessionIndex(SESSION_INDEX, MEMORY_INDEX, PROJECTS_DIR);
       const l0Count = generateL0ForExistingSessions(index, PROJECTS_DIR);
       if (l0Count > 0) writeIndex(MEMORY_INDEX, index);
-      console.log(`\n   Migrated ${Object.keys(index.sessions).length} sessions, generated L0 for ${l0Count}`);
+      console.log(`\n   ${t('memoryMigrated', Object.keys(index.sessions).length, l0Count)}`);
    }
-   console.log(`\n   💡 Run 'claude-sessions enable-memory' to enable Claude integration`);
+   console.log(`\n   💡 ${t('memoryEnableLater')}`);
 
    console.log(`\n✅ ${t('installComplete')}\n`);
    console.log(`${t('usage')}`);

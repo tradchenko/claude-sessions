@@ -1,5 +1,6 @@
 import { readIndex } from './memory/index.mjs';
 import { MEMORY_INDEX } from './config.mjs';
+import { t } from './i18n.mjs';
 
 export function searchMemories(index, query) {
    const q = query.toLowerCase();
@@ -16,10 +17,10 @@ export default async function memorySearch(query) {
    const index = readIndex(MEMORY_INDEX);
    const results = searchMemories(index, query);
    if (results.length === 0) {
-      console.log(`No memories found for "${query}"`);
+      console.log(t('memoryNoResults', query));
       return;
    }
-   console.log(`Found ${results.length} memories:\n`);
+   console.log(t('memoryFound', results.length) + '\n');
    for (const m of results) {
       console.log(`  ${(m.hotness || 0).toFixed(2)} ${m.category}/${m.name}`);
       console.log(`  ${m.description || m.content?.slice(0, 80) || ''}\n`);

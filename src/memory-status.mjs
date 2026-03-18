@@ -1,5 +1,6 @@
 import { readIndex } from './memory/index.mjs';
 import { MEMORY_INDEX } from './config.mjs';
+import { t } from './i18n.mjs';
 
 export function formatMemoryStatus(index) {
    const memories = Object.values(index.memories || {});
@@ -11,10 +12,10 @@ export function formatMemoryStatus(index) {
    }
 
    const lines = [
-      `Memory Status`,
+      t('memoryStatus'),
       `─────────────`,
-      `Total memories: ${memories.length}`,
-      `Total sessions: ${sessions.length}`,
+      t('memoryTotal', memories.length),
+      t('memorySessions', sessions.length),
       ``,
       `By category:`,
    ];
@@ -32,7 +33,7 @@ export function formatMemoryStatus(index) {
 
    const pendingL1 = Object.values(index.sessions || {}).filter(s => s.l0 && !s.l1_ready).length;
    if (pendingL1 > 0) {
-      lines.push('', `Pending L1 extraction: ${pendingL1} sessions`);
+      lines.push('', t('memoryPendingL1', pendingL1));
    }
 
    return lines.join('\n');
