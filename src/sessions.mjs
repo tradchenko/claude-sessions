@@ -108,6 +108,20 @@ export function readIndex() {
    }
 }
 
+/**
+ * Returns list of session IDs that need L1 extraction
+ */
+export function checkPendingExtractions(index) {
+   const MAX_ATTEMPTS = 3;
+   return Object.entries(index.sessions || {})
+      .filter(([id, s]) => {
+         if (!s.l0 || s.l1_ready) return false;
+         if (s.extraction_failed && (s.extraction_attempts || 0) >= MAX_ATTEMPTS) return false;
+         return true;
+      })
+      .map(([id]) => id);
+}
+
 export function writeIndex(index) {
    // Limit to 200 entries
    const entries = Object.entries(index);

@@ -1,6 +1,6 @@
 import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -566,5 +566,61 @@ describe('catalog generation', () => {
       assert.ok(output.includes('Memory Catalog'));
       assert.ok(output.includes('Hot Memories'));
       assert.ok(output.includes('Fixed the bug'));
+   });
+});
+
+describe('lazy fallback', () => {
+   it('detects sessions needing L1 extraction', async () => {
+      const { checkPendingExtractions } = await import('../src/sessions.mjs');
+      const index = {
+         sessions: {
+            's1': { l0: { summary: 'test' }, l1_ready: false },
+            's2': { l0: { summary: 'test2' }, l1_ready: true },
+            's3': { l0: { summary: 'test3' }, extraction_failed: true, extraction_attempts: 1 },
+            's4': { l0: { summary: 'test4' }, extraction_failed: true, extraction_attempts: 3 },
+         }
+      };
+      const pending = checkPendingExtractions(index);
+      assert.equal(pending.length, 2); // s1 + s3 (retry allowed)
+   });
+
+   it('returns empty for fully processed index', async () => {
+      const { checkPendingExtractions } = await import('../src/sessions.mjs');
+      const index = { sessions: { 's1': { l0: {}, l1_ready: true }, 's2': { l1_ready: true } } };
+      const pending = checkPendingExtractions(index);
+      assert.equal(pending.length, 0);
+   });
+});
+
+describe('native projection', () => {
+   let tempDir;
+   beforeEach(() => { tempDir = mkdtempSync(join(tmpdir(), 'cs-proj-')); });
+   afterEach(() => { rmSync(tempDir, { recursive: true, force: true }); });
+
+   it('projects hot memories to native format', async () => {
+      const { projectToNativeFormat } = await import('../src/memory/project.mjs');
+      const index = {
+         memories: {
+            'profile/role': { name: 'role', category: 'profile', hotness: 0.9, content: 'Senior dev', description: 'User role', projects: ['/test'] },
+            'cases/fix': { name: 'fix', category: 'cases', hotness: 0.7, content: 'Fixed bug', description: 'Bug fix', projects: ['/test'] },
+         }
+      };
+      const memDir = join(tempDir, 'memory');
+      const count = projectToNativeFormat(index, '/test', memDir);
+      assert.equal(count, 2);
+      assert.ok(existsSync(join(memDir, 'sm-profile-role.md')));
+      assert.ok(existsSync(join(memDir, 'sm-cases-fix.md')));
+   });
+
+   it('cleans old projected files before writing new', async () => {
+      const { projectToNativeFormat } = await import('../src/memory/project.mjs');
+      const memDir = join(tempDir, 'memory');
+      mkdirSync(memDir, { recursive: true });
+      writeFileSync(join(memDir, 'sm-old-file.md'), 'old content');
+
+      const index = { memories: { 'cases/new': { name: 'new', category: 'cases', hotness: 0.5, content: 'New', projects: ['/p'] } } };
+      projectToNativeFormat(index, '/p', memDir);
+      assert.ok(!existsSync(join(memDir, 'sm-old-file.md')));
+      assert.ok(existsSync(join(memDir, 'sm-cases-new.md')));
    });
 });
