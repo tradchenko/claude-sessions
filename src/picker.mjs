@@ -367,13 +367,11 @@ export default async function picker(args = []) {
       if (key === '\x01') {
          cleanup();
          console.log(`\n${t('launchingAI')}\n`);
-         try {
-            const { default: summarize } = await import('./summarize.mjs');
-            await summarize([]);
-         } catch (e) {
-            console.error(`\n❌ ${e.message || 'Summarization failed'}`);
-         }
-         process.exit(0);
+         import('./summarize.mjs')
+            .then(({ default: summarize }) => summarize([]))
+            .catch((e) => console.error(`\n❌ ${e.message || 'Summarization failed'}`))
+            .finally(() => process.exit(0));
+         return;
       }
 
       // Arrows
