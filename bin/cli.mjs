@@ -14,7 +14,7 @@
  *   claude-sessions uninstall    — remove slash commands and hooks
  */
 
-import { resolve, dirname } from 'path';
+import { resolve, join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -90,6 +90,45 @@ switch (command) {
    case 'uninstall': {
       const { default: uninstall } = await import(resolve(srcDir, 'uninstall.mjs'));
       await uninstall();
+      break;
+   }
+
+   case 'memory-status':
+   case 'ms': {
+      const { default: memoryStatus } = await import(join(srcDir, 'memory-status.mjs'));
+      await memoryStatus();
+      break;
+   }
+
+   case 'memory-search': {
+      if (!args[1]) {
+         console.error('Usage: claude-sessions memory-search <query>');
+         process.exit(1);
+      }
+      const { default: memorySearch } = await import(join(srcDir, 'memory-search.mjs'));
+      await memorySearch(args.slice(1).join(' '));
+      break;
+   }
+
+   case 'extract-memory': {
+      // TODO: Will be enhanced in Task 15 with lazy extraction
+      console.log('Memory extraction triggered manually.');
+      break;
+   }
+
+   case 'enable-memory': {
+      const { enableMemory } = await import(join(srcDir, 'enable-memory.mjs'));
+      const { SETTINGS_FILE, CLAUDE_DIR, SCRIPTS_DIR } = await import(join(srcDir, 'config.mjs'));
+      enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: SCRIPTS_DIR });
+      console.log('Memory integration enabled.');
+      break;
+   }
+
+   case 'disable-memory': {
+      const { disableMemory } = await import(join(srcDir, 'disable-memory.mjs'));
+      const { SETTINGS_FILE, CLAUDE_DIR } = await import(join(srcDir, 'config.mjs'));
+      disableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md') });
+      console.log('Memory integration disabled.');
       break;
    }
 
