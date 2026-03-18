@@ -125,9 +125,10 @@ function migrateHooks(settings) {
          }
 
          // Fix stale paths: ~/.claude/scripts/X.mjs -> package/src/X.mjs
+         // Match both absolute (/Users/.../scripts/) and tilde (~/.claude/scripts/) forms
          const cmd = arr[i].command || '';
          for (const script of staleScripts) {
-            if (cmd.includes(join(SCRIPTS_DIR, script))) {
+            if (cmd.includes(script) && !cmd.includes(PKG_SRC)) {
                arr[i].command = `node ${join(PKG_SRC, script)}`;
                changed = true;
             }
