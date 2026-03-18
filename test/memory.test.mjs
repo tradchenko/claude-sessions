@@ -420,3 +420,54 @@ describe('migration', () => {
       assert.deepEqual(result.sessions, {});
    });
 });
+
+describe('catalog generation', () => {
+   it('generates compact catalog table', async () => {
+      const { generateCatalog } = await import('../src/memory/catalog.mjs');
+      const index = {
+         memories: {
+            'profile/role': { name: 'role', category: 'profile', hotness: 0.9, description: 'Senior dev' },
+            'cases/auth-fix': { name: 'auth-fix', category: 'cases', hotness: 0.7, description: 'Fixed auth token' },
+         }
+      };
+      const catalog = generateCatalog(index);
+      assert.ok(catalog.includes('role'));
+      assert.ok(catalog.includes('profile'));
+      assert.ok(catalog.length < 1500);
+   });
+
+   it('returns placeholder for empty index', async () => {
+      const { generateCatalog } = await import('../src/memory/catalog.mjs');
+      const catalog = generateCatalog({ memories: {} });
+      assert.ok(catalog.includes('no memories'));
+   });
+
+   it('selects top hot memories for project', async () => {
+      const { selectHotMemories } = await import('../src/memory/catalog.mjs');
+      const index = {
+         memories: {
+            'cases/a': { name: 'a', category: 'cases', hotness: 0.9, content: 'Memory A', projects: ['/project'] },
+            'cases/b': { name: 'b', category: 'cases', hotness: 0.8, content: 'Memory B', projects: ['/project'] },
+            'cases/c': { name: 'c', category: 'cases', hotness: 0.7, content: 'Memory C', projects: ['/other'] },
+            'cases/d': { name: 'd', category: 'cases', hotness: 0.6, content: 'Memory D', projects: ['/project'] },
+         }
+      };
+      const hot = selectHotMemories(index, '/project', 2);
+      assert.equal(hot.length, 2);
+      assert.equal(hot[0].name, 'a');
+   });
+
+   it('formats full SessionStart output', async () => {
+      const { formatSessionStartOutput } = await import('../src/memory/catalog.mjs');
+      const index = {
+         memories: {
+            'cases/fix': { name: 'fix', category: 'cases', hotness: 0.9, content: 'Fixed the bug', description: 'Bug fix', projects: ['/p'] },
+         }
+      };
+      const output = formatSessionStartOutput(index, '/p');
+      assert.ok(output.includes('Session Memory'));
+      assert.ok(output.includes('Memory Catalog'));
+      assert.ok(output.includes('Hot Memories'));
+      assert.ok(output.includes('Fixed the bug'));
+   });
+});
