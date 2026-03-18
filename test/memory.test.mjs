@@ -231,3 +231,57 @@ describe('memory file format', () => {
       assert.equal(parsed.content, 'just plain text without frontmatter');
    });
 });
+
+describe('deduplication', () => {
+   it('detects exact match by category + name', async () => {
+      const { findMatch } = await import('../src/memory/dedup.mjs');
+      const index = {
+         memories: { 'profile/user-role': { name: 'user-role', category: 'profile', content: 'Senior dev' } }
+      };
+      const result = findMatch({ name: 'user-role', category: 'profile', content: 'Senior dev, 10 years' }, index);
+      assert.equal(result.type, 'exact');
+      assert.equal(result.key, 'profile/user-role');
+   });
+
+   it('detects fuzzy match by word overlap', async () => {
+      const { findMatch } = await import('../src/memory/dedup.mjs');
+      const index = {
+         memories: { 'cases/auth-bug-fix': { name: 'auth-bug-fix', category: 'cases', content: 'Fixed auth token expiry bug in middleware' } }
+      };
+      const result = findMatch({ name: 'token-expiry-fix', category: 'cases', content: 'Fixed token expiry issue in auth middleware' }, index);
+      assert.equal(result.type, 'fuzzy');
+   });
+
+   it('returns no match for unrelated memory', async () => {
+      const { findMatch } = await import('../src/memory/dedup.mjs');
+      const index = {
+         memories: { 'cases/auth-fix': { name: 'auth-fix', category: 'cases', content: 'Fixed auth token' } }
+      };
+      const result = findMatch({ name: 'deploy-script', category: 'patterns', content: 'Use blue-green deployment' }, index);
+      assert.equal(result.type, 'none');
+   });
+
+   it('calculates Jaccard similarity correctly', async () => {
+      const { jaccardSimilarity } = await import('../src/memory/dedup.mjs');
+      assert.equal(jaccardSimilarity('the cat sat', 'the cat sat'), 1.0);
+      assert.ok(jaccardSimilarity('the cat sat', 'the dog sat') >= 0.5);
+      assert.equal(jaccardSimilarity('hello world', 'goodbye moon'), 0);
+   });
+
+   it('merges appendable categories', async () => {
+      const { mergeContent } = await import('../src/memory/dedup.mjs');
+      const result = mergeContent('Line one.\nLine two.', 'Line two.\nLine three.', 'profile');
+      assert.ok(result.includes('Line one'));
+      assert.ok(result.includes('Line three'));
+      assert.equal(result.split('Line two').length - 1, 1);
+   });
+
+   it('resolveCandidate skips duplicate immutable', async () => {
+      const { resolveCandidate } = await import('../src/memory/dedup.mjs');
+      const index = {
+         memories: { 'events/deploy': { name: 'deploy', category: 'events', content: 'Deployed v2 to production on March 15' } }
+      };
+      const resolution = resolveCandidate({ name: 'deploy', category: 'events', content: 'Deployed v2 to production on March 15' }, index);
+      assert.equal(resolution.action, 'skip');
+   });
+});
