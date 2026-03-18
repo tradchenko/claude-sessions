@@ -56,6 +56,14 @@ export const SETTINGS_FILE = join(CLAUDE_DIR, 'settings.json');
 export const COMMANDS_DIR = join(CLAUDE_DIR, 'commands');
 export const SCRIPTS_DIR = join(CLAUDE_DIR, 'scripts');
 
+export const MEMORY_DIR = join(CLAUDE_DIR, 'session-memory');
+export const MEMORY_INDEX = join(MEMORY_DIR, 'index.json');
+export const MEMORY_CONFIG = join(MEMORY_DIR, 'config.json');
+export const MEMORIES_DIR = join(MEMORY_DIR, 'memories');
+export const MEMORY_LOCK = join(MEMORY_DIR, 'index.lock');
+export const MEMORY_ERROR_LOG = join(MEMORY_DIR, 'error.log');
+export const MEMORY_CATEGORIES = ['profile', 'preferences', 'entities', 'events', 'cases', 'patterns'];
+
 /**
  * Checks that Claude Code is installed and directories exist
  */
