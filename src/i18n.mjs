@@ -85,6 +85,8 @@ const translations = {
       claudeNotInstalled: 'Claude CLI not found. Install: https://docs.anthropic.com/en/docs/claude-code',
       sessionData: 'Session data:',
       launchingSummarize: 'Launching Claude for summary generation...',
+      summarizeComplete: (n) => `Summarization complete — ${n} sessions processed`,
+      summarizeFailed: (err) => `Summarization failed: ${err}`,
       // Summarize prompt language hint
       summaryLangHint: 'Generate a short summary in English (1 line, up to 70 characters)',
       // Uninstall
@@ -213,6 +215,8 @@ const translations = {
       claudeNotInstalled: 'Claude CLI не найден. Установи: https://docs.anthropic.com/en/docs/claude-code',
       sessionData: 'Данные сессий:',
       launchingSummarize: 'Запускаю Claude для генерации резюме...',
+      summarizeComplete: (n) => `Резюмирование завершено — обработано ${n} сессий`,
+      summarizeFailed: (err) => `Ошибка резюмирования: ${err}`,
       summaryLangHint: 'Сгенерируй краткое резюме на русском (1 строка, до 70 символов)',
       removing: 'Удаление claude-sessions...',
       removedCommand: (f) => `Удалена команда: ${f}`,

@@ -176,5 +176,8 @@ Execute save for EACH session.`;
 
    try {
       execFileSync('claude', ['-p', prompt], { stdio: 'inherit' });
-   } catch {}
+      console.log(`\n✅ ${t('summarizeComplete', count)}`);
+   } catch (e) {
+      console.error(`\n❌ ${t('summarizeFailed', e.message || 'unknown error')}`);
+   }
 }
