@@ -18,7 +18,8 @@ function askYesNo(question) {
       const rl = createInterface({ input: process.stdin, output: process.stdout });
       rl.question(question, (answer) => {
          rl.close();
-         resolve(answer.trim().toLowerCase() === 'y');
+         const a = answer.trim().toLowerCase();
+         resolve(a === '' || a === 'y' || a === 'yes');
       });
    });
 }
@@ -245,7 +246,7 @@ export default async function install() {
       console.log(`     - Add a SessionStart hook to load relevant memories`);
       console.log(`     - Add instructions to ~/.claude/CLAUDE.md`);
       console.log('');
-      const yes = await askYesNo('   Enable memory integration? [y/N]: ');
+      const yes = await askYesNo('   Enable memory integration? [Y/n]: ');
       if (yes) {
          enableMemory({ settingsPath: SETTINGS_FILE, claudeMdPath: join(CLAUDE_DIR, 'CLAUDE.md'), scriptsDir: SCRIPTS_DIR });
          console.log(`\n   ✅ ${t('memoryEnabled')}`);
