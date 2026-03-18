@@ -368,7 +368,8 @@ export default async function picker(args = []) {
          cleanup();
          console.log(`\n${t('launchingAI')}\n`);
          try {
-            execFileSync('node', [summarizePath], { stdio: 'inherit' });
+            const { default: summarize } = await import('./summarize.mjs');
+            await summarize([]);
          } catch (e) {
             console.error(`\n❌ ${e.message || 'Summarization failed'}`);
          }
