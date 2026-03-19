@@ -162,6 +162,15 @@ function formatAsMarkdown(conversation: ConversationMessage[] | SplitConversatio
    return md;
 }
 
+// Auto-invoke when run as script
+const isMain = process.argv[1]?.endsWith('restore.js');
+if (isMain && process.argv[2]) {
+   restore(process.argv[2]).catch((e) => {
+      console.error(e instanceof Error ? e.message : e);
+      process.exit(1);
+   });
+}
+
 export default async function restore(sessionId: string): Promise<void> {
    const found = findSessionFile(sessionId);
 
