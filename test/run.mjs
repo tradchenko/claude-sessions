@@ -17,7 +17,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..');
-const CLI = join(PKG_ROOT, 'bin', 'cli.mjs');
+const CLI = join(PKG_ROOT, 'dist', 'cli.js');
 
 // Create a temporary ~/.claude mock directory for tests
 const TEST_DIR = join(tmpdir(), `claude-sessions-test-${Date.now()}`);
@@ -85,14 +85,14 @@ function runCli(args, env = {}) {
 
 describe('i18n', () => {
    it('should export t() and getLocale()', async () => {
-      const { t, getLocale, currentLang } = await import(join(PKG_ROOT, 'src', 'i18n.mjs'));
+      const { t, getLocale, currentLang } = await import(join(PKG_ROOT, 'dist', 'core', 'i18n.js'));
       assert.equal(typeof t, 'function');
       assert.equal(typeof getLocale, 'function');
       assert.equal(typeof currentLang, 'string');
    });
 
    it('should return English translations by default', async () => {
-      const { t } = await import(join(PKG_ROOT, 'src', 'i18n.mjs'));
+      const { t } = await import(join(PKG_ROOT, 'dist', 'core', 'i18n.js'));
       // t() returns string or the result of calling the translation
       const noDesc = t('noDescription');
       assert.ok(typeof noDesc === 'string');
@@ -100,13 +100,13 @@ describe('i18n', () => {
    });
 
    it('should handle function translations with args', async () => {
-      const { t } = await import(join(PKG_ROOT, 'src', 'i18n.mjs'));
+      const { t } = await import(join(PKG_ROOT, 'dist', 'core', 'i18n.js'));
       const result = t('daysAgo', 5);
       assert.ok(result.includes('5'));
    });
 
    it('should return key for unknown translations', async () => {
-      const { t } = await import(join(PKG_ROOT, 'src', 'i18n.mjs'));
+      const { t } = await import(join(PKG_ROOT, 'dist', 'core', 'i18n.js'));
       const result = t('nonexistent_key_xyz');
       assert.equal(result, 'nonexistent_key_xyz');
    });
@@ -114,7 +114,7 @@ describe('i18n', () => {
 
 describe('config', () => {
    it('should export all constants', async () => {
-      const config = await import(join(PKG_ROOT, 'src', 'config.mjs'));
+      const config = await import(join(PKG_ROOT, 'dist', 'core', 'config.js'));
       assert.ok(config.CLAUDE_DIR);
       assert.ok(config.HISTORY_FILE);
       assert.ok(config.PROJECTS_DIR);
@@ -125,14 +125,14 @@ describe('config', () => {
    });
 
    it('formatDate should return string for current timestamp', async () => {
-      const { formatDate } = await import(join(PKG_ROOT, 'src', 'config.mjs'));
+      const { formatDate } = await import(join(PKG_ROOT, 'dist', 'core', 'config.js'));
       const result = formatDate(Date.now());
       assert.equal(typeof result, 'string');
       assert.ok(result.length > 0);
    });
 
    it('shortProjectName should extract last path segment', async () => {
-      const { shortProjectName } = await import(join(PKG_ROOT, 'src', 'config.mjs'));
+      const { shortProjectName } = await import(join(PKG_ROOT, 'dist', 'core', 'config.js'));
       assert.equal(shortProjectName('/Users/user/my-project'), 'my-project');
       assert.equal(shortProjectName('C:\\Users\\user\\project'), 'project');
       assert.equal(shortProjectName(null), 'unknown');
@@ -152,7 +152,7 @@ describe('CLI help', () => {
    it('should display help text', () => {
       const output = runCli('help');
       assert.ok(output.includes('claude-sessions'));
-      assert.ok(output.includes('Commands:') || output.includes('commands'));
+      assert.ok(output.includes('Commands:') || output.includes('commands') || output.includes('Команды:'));
       assert.ok(output.includes('list'));
       assert.ok(output.includes('search'));
       assert.ok(output.includes('install'));
@@ -255,7 +255,7 @@ describe('save-summary-hook', () => {
    });
 
    it('should save summary to session-index.json', () => {
-      const script = join(PKG_ROOT, 'src', 'save-summary-hook.mjs');
+      const script = join(PKG_ROOT, 'dist', 'hooks', 'save-summary.js');
       execSync(`node ${script} --session aaaa3333-bbbb-cccc-dddd-eeeeeeee0003 --summary "Pipeline deploy fix"`, {
          encoding: 'utf8',
          env: { ...process.env, HOME: TEST_DIR },
@@ -266,7 +266,7 @@ describe('save-summary-hook', () => {
    });
 
    it('should find full ID from short ID', () => {
-      const script = join(PKG_ROOT, 'src', 'save-summary-hook.mjs');
+      const script = join(PKG_ROOT, 'dist', 'hooks', 'save-summary.js');
       execSync(`node ${script} --session aaaa4444 --summary "MCP configuration"`, {
          encoding: 'utf8',
          env: { ...process.env, HOME: TEST_DIR },
@@ -313,5 +313,8 @@ describe('edge cases', () => {
       rmSync(dir, { recursive: true, force: true });
    });
 });
+
+// Импорт тестов мульти-агентных модулей
+await import('./agents.test.mjs');
 
 console.log('\nRunning claude-sessions tests...\n');

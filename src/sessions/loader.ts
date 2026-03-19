@@ -1,0 +1,194 @@
+/**
+ * Session data loading and processing
+ */
+
+import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
+import { createInterface } from 'readline';
+import {
+   HISTORY_FILE,
+   SESSION_INDEX,
+   MEMORY_INDEX,
+   formatDate,
+   shortProjectName,
+} from '../core/config.js';
+import { t } from '../core/i18n.js';
+
+/** Session interface for UI display */
+export interface Session {
+   id: string;
+   project: string;
+   projectPath: string;
+   summary: string;
+   dateStr: string;
+   cnt: string;
+   lastTs: number;
+   count: number;
+   searchText: string;
+   /** Actual agent (claude, codex, qwen, gemini) */
+   agent: string;
+   /** Session launched via Companion */
+   viaCompanion?: boolean;
+}
+
+/** Event entry from history.jsonl */
+interface HistoryEvent {
+   sessionId?: string;
+   project?: string;
+   display?: string;
+   timestamp: number;
+}
+
+/** Session data accumulator during parsing */
+interface SessionAccumulator {
+   id: string;
+   project: string;
+   msg: string;
+   messages: string[];
+   ts: number;
+   lastTs: number;
+   count: number;
+}
+
+/** Summary index entry */
+interface SessionIndexEntry {
+   summary?: string;
+   lastActive?: number;
+   [key: string]: unknown;
+}
+
+/** Session summary index */
+type SessionIndex = Record<string, SessionIndexEntry>;
+
+/** Unified memory index */
+interface MemoryIndex {
+   sessions?: SessionIndex;
+   [key: string]: unknown;
+}
+
+/** Session loading parameters */
+export interface LoadSessionsOptions {
+   projectFilter?: string;
+   searchQuery?: string;
+   limit?: number;
+   /** Filter by specific agent (if not set — all active) */
+   agentFilter?: string;
+}
+
+/**
+ * Loads sessions from all active agents.
+ * Merges, sorts chronologically, applies filters.
+ */
+export async function loadSessions({
+   projectFilter,
+   searchQuery,
+   limit = 500,
+   agentFilter,
+}: LoadSessionsOptions = {}): Promise<Session[]> {
+   // Lazy import of registry (avoid circular dependencies)
+   const { getActiveAdapters, getAdapter } = await import('../agents/registry.js');
+
+   let adapters = agentFilter
+      ? [getAdapter(agentFilter as import('../agents/types.js').AgentId)].filter(Boolean) as import('../agents/types.js').AgentAdapter[]
+      : getActiveAdapters();
+
+   // If no active adapters — fallback to loading only Claude
+   if (adapters.length === 0) {
+      const { claudeAdapter } = await import('../agents/claude.js');
+      adapters = [claudeAdapter];
+   }
+
+   // Load sessions from all adapters in parallel
+   const results = await Promise.allSettled(
+      adapters.map((adapter) =>
+         adapter.loadSessions({ projectFilter, searchQuery, limit }),
+      ),
+   );
+
+   // Merge results
+   const allSessions: Session[] = [];
+   for (const result of results) {
+      if (result.status === 'fulfilled') {
+         allSessions.push(...result.value);
+      }
+      // Individual adapter errors don't break overall loading
+   }
+
+   // Sort chronologically (newest first)
+   allSessions.sort((a, b) => b.lastTs - a.lastTs);
+
+   return allSessions.slice(0, limit);
+}
+
+/**
+ * Read summary index (try unified, then fallback to legacy)
+ */
+export function readSessionIndex(): SessionIndex {
+   // First try the new unified index
+   try {
+      const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8')) as MemoryIndex;
+      return idx.sessions || {};
+   } catch {
+      // Fallback to old session-index.json
+      try {
+         return JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as SessionIndex;
+      } catch {
+         return {};
+      }
+   }
+}
+
+/** Entry in unified index for pending check */
+interface UnifiedSessionEntry {
+   l0?: unknown;
+   l1_ready?: boolean;
+   extraction_failed?: boolean;
+   extraction_attempts?: number;
+   [key: string]: unknown;
+}
+
+/** Unified index with sections */
+interface UnifiedIndex {
+   sessions?: Record<string, UnifiedSessionEntry>;
+   [key: string]: unknown;
+}
+
+/**
+ * Returns list of session IDs that need L1 extraction
+ */
+export function checkPendingExtractions(index: UnifiedIndex): string[] {
+   const MAX_ATTEMPTS = 3;
+   return Object.entries(index.sessions || {})
+      .filter(([_id, s]) => {
+         if (!s.l0 || s.l1_ready) return false;
+         if (s.extraction_failed && (s.extraction_attempts || 0) >= MAX_ATTEMPTS) return false;
+         return true;
+      })
+      .map(([id]) => id);
+}
+
+/**
+ * Write summary index (limited to 200 entries)
+ */
+export function writeSessionIndex(index: SessionIndex): void {
+   // Limit to 200 entries
+   const entries = Object.entries(index);
+   let trimmedIndex = index;
+   if (entries.length > 200) {
+      entries.sort((a, b) => (b[1].lastActive || 0) - (a[1].lastActive || 0));
+      trimmedIndex = Object.fromEntries(entries.slice(0, 200));
+   }
+
+   // Write to legacy SESSION_INDEX for backward compatibility
+   writeFileSync(SESSION_INDEX, JSON.stringify(trimmedIndex, null, 2));
+
+   // Update sessions section in MEMORY_INDEX (if exists)
+   if (existsSync(MEMORY_INDEX)) {
+      try {
+         const unified = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8')) as MemoryIndex;
+         unified.sessions = { ...unified.sessions, ...trimmedIndex };
+         writeFileSync(MEMORY_INDEX, JSON.stringify(unified, null, 2));
+      } catch {
+         // Unified update error — not critical
+      }
+   }
+}

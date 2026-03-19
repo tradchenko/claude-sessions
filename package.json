@@ -1,15 +1,17 @@
 {
   "name": "@tradchenko/claude-sessions",
-  "version": "1.1.1",
-  "description": "Interactive session manager for Claude Code — TUI picker, search, AI summaries, session restore",
+  "version": "2.0.0",
+  "description": "Multi-agent session manager — TUI picker, search, AI summaries, shared memory system for Claude, Codex, Qwen, Gemini",
   "type": "module",
   "bin": {
-    "claude-sessions": "bin/cli.mjs",
-    "cs": "bin/cli.mjs"
+    "claude-sessions": "dist/cli.js",
+    "cs": "dist/cli.js"
   },
   "scripts": {
-    "test": "node --test test/run.mjs",
-    "postinstall": "node ./src/install.mjs --auto"
+    "build": "tsc",
+    "test": "npm run build && node --test test/run.mjs",
+    "prepublishOnly": "npm run build",
+    "postinstall": "node ./dist/commands/install.js --auto 2>/dev/null || true"
   },
   "keywords": [
     "claude",
@@ -29,12 +31,13 @@
     "node": ">=18.0.0"
   },
   "files": [
-    "bin/",
-    "src/",
-    "src/memory/",
+    "dist/",
     "claude-commands/",
-    "test/",
     "README.md",
     "LICENSE"
-  ]
+  ],
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "typescript": "^5.9.3"
+  }
 }

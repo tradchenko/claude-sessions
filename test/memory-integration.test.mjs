@@ -37,7 +37,7 @@ describe('memory system integration', () => {
       );
 
       // 3. Migrate
-      const { migrateSessionIndex, generateL0ForExistingSessions } = await import('../src/memory/migrate.mjs');
+      const { migrateSessionIndex, generateL0ForExistingSessions } = await import('../dist/memory/migrate.js');
       const index = migrateSessionIndex(oldIndexPath, indexPath);
       assert.ok(index.sessions['session-abc']);
       assert.equal(index.sessions['session-abc'].summary, 'Fixed auth bug');
@@ -50,11 +50,11 @@ describe('memory system integration', () => {
       assert.ok(index.sessions['session-abc'].l0.files.includes('src/auth.js'));
 
       // 5. Write updated index
-      const { writeIndex, readIndex } = await import('../src/memory/index.mjs');
+      const { writeIndex, readIndex } = await import('../dist/memory/index.js');
       writeIndex(indexPath, index);
 
       // 6. Verify memory-status works
-      const { formatMemoryStatus } = await import('../src/memory-status.mjs');
+      const { formatMemoryStatus } = await import('../dist/commands/memory-status.js');
       // Use the test index, not the real one
       const status = formatMemoryStatus(readIndex(indexPath));
       assert.ok(status.includes('1')); // 1 session
@@ -71,7 +71,7 @@ describe('memory system integration', () => {
       );
 
       // 2. Run saveSessionWithL0
-      const { saveSessionWithL0 } = await import('../src/save-session-summary.mjs');
+      const { saveSessionWithL0 } = await import('../dist/hooks/stop.js');
       saveSessionWithL0({
          sessionId,
          project: '/testproject',
@@ -80,13 +80,13 @@ describe('memory system integration', () => {
       });
 
       // 3. Verify L0 in index
-      const { readIndex } = await import('../src/memory/index.mjs');
+      const { readIndex } = await import('../dist/memory/index.js');
       const index = readIndex(indexPath);
       assert.ok(index.sessions[sessionId].l0);
       assert.ok(index.sessions[sessionId].l0.summary.includes('Refactor'));
 
       // 4. Generate catalog
-      const { formatSessionStartOutput } = await import('../src/memory/catalog.mjs');
+      const { formatSessionStartOutput } = await import('../dist/memory/catalog.js');
       const output = formatSessionStartOutput(index, '/testproject');
       assert.ok(output.includes('Session Memory'));
    });
@@ -98,7 +98,7 @@ describe('memory system integration', () => {
       writeFileSync(claudeMdPath, '# My Project\n');
 
       // Enable
-      const { enableMemory } = await import('../src/enable-memory.mjs');
+      const { enableMemory } = await import('../dist/commands/enable-memory.js');
       enableMemory({ settingsPath, claudeMdPath, scriptsDir: tempDir });
 
       let settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
@@ -106,7 +106,7 @@ describe('memory system integration', () => {
       assert.ok(readFileSync(claudeMdPath, 'utf8').includes('Session Memory System'));
 
       // Disable
-      const { disableMemory } = await import('../src/disable-memory.mjs');
+      const { disableMemory } = await import('../dist/commands/disable-memory.js');
       disableMemory({ settingsPath, claudeMdPath });
 
       settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
@@ -116,8 +116,8 @@ describe('memory system integration', () => {
    });
 
    it('hotness recalculation + memory limit enforcement', async () => {
-      const { readIndex, writeIndex, enforceMemoryLimit } = await import('../src/memory/index.mjs');
-      const { recalculateAll } = await import('../src/memory/hotness.mjs');
+      const { readIndex, writeIndex, enforceMemoryLimit } = await import('../dist/memory/index.js');
+      const { recalculateAll } = await import('../dist/memory/hotness.js');
 
       const index = { version: 1, memories: {}, sessions: {} };
       // Add 510 memories
@@ -142,7 +142,7 @@ describe('memory system integration', () => {
    });
 
    it('dedup resolves candidates correctly', async () => {
-      const { resolveCandidate } = await import('../src/memory/dedup.mjs');
+      const { resolveCandidate } = await import('../dist/memory/dedup.js');
       const index = {
          memories: {
             'profile/role': { name: 'role', category: 'profile', content: 'Senior developer' },
@@ -166,7 +166,7 @@ describe('memory system integration', () => {
    });
 
    it('memory file format roundtrip', async () => {
-      const { serializeMemory, parseMemory } = await import('../src/memory/format.mjs');
+      const { serializeMemory, parseMemory } = await import('../dist/memory/format.js');
       const meta = { name: 'test', category: 'cases', hotness: 0.75 };
       const content = 'Fixed the critical production bug.\nRoot cause was race condition.';
       const serialized = serializeMemory(meta, content);
@@ -177,7 +177,7 @@ describe('memory system integration', () => {
    });
 
    it('native projection creates files in correct format', async () => {
-      const { projectToNativeFormat } = await import('../src/memory/project.mjs');
+      const { projectToNativeFormat } = await import('../dist/memory/project.js');
       const index = {
          memories: {
             'cases/bugfix': { name: 'bugfix', category: 'cases', hotness: 0.8, content: 'Fixed auth bug', description: 'Auth bugfix', projects: ['/p'] },

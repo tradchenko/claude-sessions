@@ -1,54 +1,25 @@
 # claude-sessions
 
-Interactive session manager for [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Browse, search, resume, and manage your Claude Code sessions from a TUI picker or slash commands.
-
-<p align="center">
-  <img src="screenshot.png" alt="claude-sessions TUI" width="100%" />
-</p>
+Multi-agent session manager for AI coding assistants. Browse, search, resume, and manage sessions across **Claude Code**, **Codex CLI**, **Qwen Code**, and **Gemini CLI** from a single TUI. Includes a shared memory system that extracts and organizes knowledge from all your coding sessions.
 
 ## Features
 
-- **Interactive TUI picker** — arrow keys, instant search, works in Warp/iTerm2/Terminal.app/VS Code
-- **Full-text search** — find sessions by content, project, or date
-- **AI summaries** — auto-generate meaningful session descriptions via Claude
-- **Session restore** — recover sessions that `--resume` can't find from JSONL files
-- **Slash commands** — `/sessions` and `/session-summarize` inside Claude Code
-- **i18n** — auto-detects system language (English, Russian, Spanish, French, German, Chinese, Japanese, Korean, Portuguese, Turkish)
+- **Multi-agent** — unified view of sessions from Claude Code, Codex CLI, Qwen Code, Gemini CLI
+- **Companion aware** — detects sessions launched via [Companion](https://github.com/anthropics/companion) and attributes them to the real agent `[C]`
+- **Interactive TUI** — agent labels (`CLD` `CDX` `QWN` `GEM`), Tab to filter, Home/End, instant search
+- **Instant startup** — session cache for sub-second launch, background refresh
+- **AI summaries** — uses any available LLM CLI (Claude → Codex → Qwen → Gemini) to generate descriptions
+- **Shared memory** — structured knowledge extraction across all agents with hotness-based ranking
+- **MCP server** — exposes `memory-recall` and `memory-status` tools via stdio JSON-RPC
+- **i18n** — 11 languages, auto-detected from system locale
 - **Cross-platform** — macOS, Linux, Windows (WSL)
-- **Zero dependencies** — pure Node.js, no external packages
-
-## Memory System
-
-The memory system automatically extracts and organizes knowledge from your Claude Code sessions.
-
-**Three layers:**
-- **L0** — Quick summary extracted on session end (no LLM, instant)
-- **L1** — Structured memories extracted via Claude CLI in background
-- **L2** — Original session JSONL files
-
-**Six categories:** profile, preferences, entities, events, cases, patterns
-
-**Hotness scoring** ranks memories by recency, frequency of use, and project relevance.
-
-**Auto-extraction:** Stop hook extracts L0 instantly, spawns background L1 process. Lazy fallback catches anything missed.
-
-**Commands:**
-```
-claude-sessions memory-status    # Show memory stats
-claude-sessions memory-search <q> # Search memories
-claude-sessions extract-memory   # Manual extraction
-claude-sessions enable-memory    # Enable Claude integration
-claude-sessions disable-memory   # Disable Claude integration
-```
-
-**Claude integration (opt-in):**
-When enabled, a SessionStart hook loads relevant memories into Claude's context automatically. Run `claude-sessions enable-memory` to activate.
+- **Zero runtime dependencies** — TypeScript compiled to JS, no packages needed at runtime
 
 ## Quick start
 
 ```bash
 npm install -g @tradchenko/claude-sessions
-claude-sessions install
+cs install    # detects agents, installs hooks, enables memory
 ```
 
 Or try instantly:
@@ -57,168 +28,190 @@ Or try instantly:
 npx @tradchenko/claude-sessions
 ```
 
-## Usage
+## Supported agents
 
-### Terminal (TUI picker)
+| Agent | Label | Data source | Hooks | Resume | Memory instructions |
+|-------|-------|-------------|-------|--------|-------------------|
+| Claude Code | `CLD` | `~/.claude/history.jsonl` | Stop + SessionStart | `claude --resume` | `CLAUDE.md` |
+| Codex CLI | `CDX` | `~/.codex/history.jsonl` | lazy extraction | `codex --resume` | `AGENTS.md` |
+| Qwen Code | `QWN` | `~/.qwen/projects/*/chats/` | lazy extraction | `qwen --resume` | `QWEN.md` |
+| Gemini CLI | `GEM` | `~/.gemini/history/` (git) | via migration | — | `GEMINI.md` |
+| Companion | `[C]` | `~/.companion/recordings/` | — | — | — |
 
-```bash
-claude-sessions          # interactive picker
-cs                       # short alias
-cs 3                     # quick-launch session #3
-cs --search miniapp      # pre-filter by content
-cs --project client-web  # pre-filter by project
-```
+Companion is not a separate agent — its sessions are attributed to the actual agent (Claude, Codex, etc.) with a `[C]` marker.
 
-#### TUI keybindings
+## Commands
 
-| Key          | Action                  |
-| ------------ | ----------------------- |
-| ↑↓           | Navigate (wraps around) |
-| Type text    | Instant search          |
-| Enter        | Open session            |
-| Ctrl-D       | Delete session          |
-| Ctrl-A       | AI summarize sessions   |
-| Ctrl-R       | Refresh list            |
-| Page Up/Down | Fast scroll             |
-| Esc          | Exit                    |
+| Command | Description |
+|---------|-------------|
+| `cs` | Interactive TUI picker |
+| `cs list` | Text list of recent sessions |
+| `cs search <text>` | Search sessions by content |
+| `cs summarize` | Generate AI summaries (uses any available LLM) |
+| `cs install` | Detect agents, install hooks & memory instructions |
+| `cs mcp-server` | Start MCP server for memory tools |
+| `cs memory-status` | Show memory system statistics |
+| `cs memory-search <q>` | Search extracted memories |
+| `cs enable-memory` | Enable memory integration |
+| `cs disable-memory` | Disable memory integration |
+| `cs extract-memory` | Manually trigger memory extraction |
 
-### Terminal (text commands)
+## TUI picker
 
-```bash
-claude-sessions list                    # text list (20 recent)
-claude-sessions list --limit 50         # more sessions
-claude-sessions list --all              # all sessions
-claude-sessions search "telegram"       # search by content
-claude-sessions summarize               # AI summaries for undescribed sessions
-claude-sessions delete <session-id>     # delete a session
-claude-sessions restore <session-id>    # restore from JSONL when --resume fails
-```
+| Key | Action |
+|-----|--------|
+| ↑↓ | Navigate (wraps around) |
+| Tab | Cycle agent filter (All → CLD → CDX → QWN → GEM) |
+| Home/End | Jump to first/last |
+| PgUp/PgDn | Page scroll |
+| Enter | Open/resume session |
+| Ctrl-D | Delete session |
+| Ctrl-A | AI summarize |
+| Ctrl-R | Refresh |
+| Type text | Instant search |
+| Esc | Quit |
 
-### Inside Claude Code
-
-```
-/sessions                    # list sessions
-/sessions --search miniapp   # search
-/sessions --project client   # filter by project
-/session-summarize           # generate AI summaries
-```
+The picker starts instantly from cache, then loads all agents in the background. A status bar shows loading progress.
 
 ## Install
 
-### npm (recommended)
-
 ```bash
 npm install -g @tradchenko/claude-sessions
-claude-sessions install
+cs install
 ```
 
 The `install` command:
 
-1. Detects your terminal (Warp, iTerm2, VS Code, etc.) and gives compatibility tips
-2. Copies `/sessions` and `/session-summarize` slash commands to `~/.claude/commands/`
-3. Adds a Stop hook for auto-tracking session metadata
-4. Scans your existing sessions and shows statistics (count, projects, date range)
-5. Reports how many sessions lack AI summaries
+1. Detects all installed agents and Companion
+2. Installs Stop and SessionStart hooks for Claude Code
+3. Injects memory instructions into each agent's config file (`CLAUDE.md`, `AGENTS.md`, `QWEN.md`, `GEMINI.md`)
+4. Creates memory directories and migrates existing session data
+5. Shows session statistics
 
-**Safe install** — never overwrites existing files or settings. Existing slash commands, hooks, and configurations are preserved.
+Safe — never overwrites existing configs, only appends.
 
-### Manual
+### From source
 
 ```bash
 git clone https://github.com/tradchenko/claude-sessions.git
 cd claude-sessions
+npm install && npm run build
 npm link
-claude-sessions install
+cs install
 ```
 
-## How it works
+## Memory system
 
-### Architecture
+Automatic knowledge extraction from coding sessions across all agents. Shared memory pool — knowledge from a Claude session is available when starting a Qwen session on the same project.
+
+### Extraction strategies
+
+- **Hooks** (Claude Code) — Stop hook extracts L0 instantly, spawns background L1
+- **Lazy** (Codex, Qwen, Gemini) — discovered on next `cs` launch, extracted in background
+- **Manual** — `cs extract-memory` triggers extraction on demand
+
+### Three layers
+
+| Layer | Speed | Method | Content |
+|-------|-------|--------|---------|
+| **L0** | Instant | JSONL parsing, no LLM | Summary, files, message count |
+| **L1** | Background | LLM extraction via any CLI | Structured memories (profile, preferences, entities, events, cases, patterns) |
+| **L2** | Reference | Original session files | Full conversation history |
+
+### Hotness scoring
 
 ```
-claude-sessions
-├── bin/cli.mjs              # CLI entry point (routes commands)
-├── src/
-│   ├── picker.mjs           # Interactive TUI (raw terminal I/O)
-│   ├── sessions.mjs         # Session loading from history.jsonl
-│   ├── list.mjs             # Text list output
-│   ├── delete.mjs           # Safe deletion (JSON parsing, ID validation)
-│   ├── restore.mjs          # Session recovery from JSONL
-│   ├── summarize.mjs        # AI summary generation via Claude CLI
-│   ├── install.mjs          # Slash commands & hooks installer
-│   ├── uninstall.mjs        # Clean removal
-│   ├── config.mjs           # Cross-platform path resolution
-│   └── i18n.mjs             # Internationalization
-├── claude-commands/          # Slash command templates
-└── test/                     # Unit tests (node:test)
+hotness = recency * 0.3 + frequency * 0.4 + relevance * 0.3
 ```
 
-### Data sources
+Top memories by hotness are loaded into agent context on session start. Deduplication prevents redundant memories across agents.
 
-Claude Code stores session data in `~/.claude/`:
+### Six categories
 
-| File                         | Content                                                      |
-| ---------------------------- | ------------------------------------------------------------ |
-| `history.jsonl`              | All session entries (user messages, timestamps, session IDs) |
-| `projects/{path}/{id}.jsonl` | Full session content (messages, tool calls, results)         |
-| `session-index.json`         | AI-generated summaries (created by this tool)                |
+`profile` · `preferences` · `entities` · `events` · `cases` · `patterns`
 
-**Sessions survive reboots** — they are regular files on disk.
-
-### Session restore
-
-When `claude --resume` can't find a session (e.g., after cleanup or Claude Code update), `claude-sessions` automatically:
-
-1. Searches for the session JSONL file in `~/.claude/projects/`
-2. Extracts the conversation (up to 50 messages)
-3. Cleans up system tags and metadata
-4. Starts a new Claude session with the restored context as a markdown prompt
-
-### Security
-
-- **Session ID validation** — only UUID-format IDs accepted, prevents path traversal
-- **Safe deletion** — JSON parsing (not string matching) to avoid deleting unrelated data
-- **No shell injection** — all external commands use `execFileSync` (no shell interpolation)
-- **Install safety** — never overwrites existing files, only appends hooks
-
-## Internationalization (i18n)
-
-The tool auto-detects your system language from `LC_ALL`, `LANG`, or `LANGUAGE` environment variables. On macOS, it also checks `AppleLocale`.
-
-Supported languages: English (default), Russian, Spanish, French, German, Chinese, Japanese, Korean, Portuguese, Turkish.
-
-Override the language:
+## MCP server
 
 ```bash
-CLAUDE_SESSIONS_LANG=en claude-sessions    # force English
-CLAUDE_SESSIONS_LANG=ru claude-sessions    # force Russian
+cs mcp-server
 ```
 
-AI-generated session summaries also respect the detected language.
+Stdio-based MCP server (JSON-RPC 2.0) exposing two tools:
 
-## Testing
+- **`memory-recall`** — search memories by keyword, returns results sorted by hotness
+- **`memory-status`** — memory statistics, category breakdown, top memories
+
+Add to your agent's MCP config for cross-agent memory access.
+
+## Architecture
+
+```
+src/
+├── cli.ts                     — CLI entry point & command routing
+├── core/
+│   ├── config.ts              — paths, constants, cross-platform utils
+│   └── i18n.ts                — 11 languages
+├── agents/
+│   ├── types.ts               — AgentAdapter interface
+│   ├── registry.ts            — detection, caching, config
+│   ├── claude.ts              — Claude Code adapter
+│   ├── codex.ts               — Codex CLI adapter
+│   ├── qwen.ts                — Qwen Code adapter
+│   ├── gemini.ts              — Gemini CLI adapter
+│   └── companion.ts           — Companion session attribution
+├── sessions/
+│   ├── loader.ts              — multi-agent session loader
+│   ├── cache.ts               — disk cache for instant startup
+│   └── lazy-extract.ts        — background discovery for hookless agents
+├── commands/
+│   ├── picker.ts              — interactive TUI
+│   ├── list.ts                — text output
+│   ├── summarize.ts           — AI summaries (multi-LLM)
+│   ├── install.ts             — setup & agent detection
+│   ├── delete.ts, restore.ts, uninstall.ts
+│   ├── enable-memory.ts, disable-memory.ts
+│   └── memory-status.ts, memory-search.ts
+├── hooks/
+│   ├── stop.ts                — session end: save metadata + L0
+│   └── session-start.ts       — session start: load memory catalog
+├── memory/
+│   ├── types.ts               — MemoryEntry, MemoryIndex, etc.
+│   ├── extract-l0.ts          — L0 extraction (Claude format)
+│   ├── extract-l0-multi.ts    — L0 for all agent formats
+│   ├── extract-l1.ts          — L1 via LLM (multi-agent file discovery)
+│   ├── hotness.ts, dedup.ts, catalog.ts, format.ts
+│   ├── index.ts, config.ts, migrate.ts, project.ts
+└── mcp/
+    └── server.ts              — MCP server (stdio JSON-RPC)
+```
+
+40 TypeScript source files. Compiled JS shipped in `dist/`. Zero runtime dependencies.
+
+## Development
 
 ```bash
-npm test                     # run all 23 tests
-node --test test/run.mjs     # same thing
+npm install          # install devDependencies (typescript, @types/node)
+npm run build        # compile TypeScript → dist/
+npm test             # run all tests (108 tests across 3 suites)
+npm link             # link for local testing
 ```
 
-Tests use Node.js built-in test runner (`node:test`) — no test dependencies required. Tests create isolated mock `~/.claude` directories and clean up after themselves.
+## i18n
+
+Auto-detects from `LC_ALL`, `LANG`, `LANGUAGE`, or `AppleLocale` (macOS).
+
+Supported: English, Russian, Spanish, French, German, Chinese (Simplified & Traditional), Japanese, Korean, Portuguese, Turkish.
+
+```bash
+CLAUDE_SESSIONS_LANG=en cs    # force English
+```
 
 ## Uninstall
 
 ```bash
-claude-sessions uninstall    # remove slash commands and hooks
-npm uninstall -g @tradchenko/claude-sessions
+cs uninstall                              # remove hooks & commands
+npm uninstall -g @tradchenko/claude-sessions  # remove package
 ```
-
-Your `session-index.json` (AI summaries) is preserved.
-
-## Requirements
-
-- Node.js >= 18
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
-- At least one Claude Code session in history
 
 ## License
 
