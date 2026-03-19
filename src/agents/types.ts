@@ -42,6 +42,9 @@ export interface AgentAdapter {
    /** Returns command for session resume */
    getResumeCommand(sessionId: string): string[] | null;
 
+   /** Checks if a session is alive (can be resumed). Returns false if session is dead/archived. */
+   isSessionAlive(sessionId: string): boolean;
+
    /** Returns path to instructions file for memory injection */
    getInstructionsPath(): string | null;
 }

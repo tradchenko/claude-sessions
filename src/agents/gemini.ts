@@ -188,6 +188,10 @@ export const geminiAdapter: AgentAdapter = {
       return null;
    },
 
+   isSessionAlive(_sessionId: string): boolean {
+      return false; // Gemini has no resume support
+   },
+
    /**
     * Path to GEMINI.md for memory injection
     */

@@ -418,28 +418,29 @@ export default async function picker(args: string[] = []): Promise<void> {
 
          cleanup();
 
-         // Get adapter for this agent
+         // Get adapter and check if session is alive
          import('../agents/registry.js').then(({ getAdapter }) => {
             const adapter = getAdapter(s.agent as import('../agents/types.js').AgentId);
             const resumeCmd = adapter?.getResumeCommand(s.id);
+            const alive = adapter?.isSessionAlive(s.id) ?? false;
 
-            if (resumeCmd && resumeCmd.length > 0) {
+            if (alive && resumeCmd && resumeCmd.length > 0) {
+               // Session is alive — resume directly
                const [cmd, ...cmdArgs] = resumeCmd;
                console.log(`\n▶ ${resumeCmd.join(' ')}\n`);
-               try {
-                  execFileSync(cmd, cmdArgs, { stdio: 'inherit' });
-               } catch {
-                  // Agent may have exited with an error
-               }
+               try { execFileSync(cmd, cmdArgs, { stdio: 'inherit' }); } catch { /* */ }
             } else if (s.agent === 'claude') {
-               // Fallback for Claude — restore via JSONL
+               // Dead Claude session — restore from JSONL
                console.log(`\n${t('sessionNotFound')}\n`);
                try {
                   const restorePath = join(__dirname, 'restore.js');
                   execFileSync('node', [restorePath, s.id], { stdio: 'inherit' });
-               } catch {
-                  // Ignore restore errors
-               }
+               } catch { /* */ }
+            } else if (resumeCmd && resumeCmd.length > 0) {
+               // Other agent — try resume anyway (may fail)
+               const [cmd, ...cmdArgs] = resumeCmd;
+               console.log(`\n▶ ${resumeCmd.join(' ')}\n`);
+               try { execFileSync(cmd, cmdArgs, { stdio: 'inherit' }); } catch { /* */ }
             } else {
                console.log(`\nSession ${s.agent}:${s.id} — resume not available for this agent\n`);
             }

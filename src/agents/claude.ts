@@ -3,7 +3,7 @@
  * Implements AgentAdapter — session loading, CLI detection, resume.
  */
 
-import { readFileSync, existsSync, createReadStream } from 'fs';
+import { readFileSync, existsSync, createReadStream, readdirSync } from 'fs';
 import { createInterface } from 'readline';
 import { join } from 'path';
 
@@ -208,6 +208,19 @@ export const claudeAdapter: AgentAdapter = {
       const cliBin = findClaudeCli();
       if (!cliBin) return null;
       return [cliBin, '--resume', sessionId];
+   },
+
+   isSessionAlive(sessionId: string): boolean {
+      const sessionsDir = join(HOME, '.claude', 'sessions');
+      if (!existsSync(sessionsDir)) return false;
+      try {
+         for (const f of readdirSync(sessionsDir)) {
+            if (!f.endsWith('.json')) continue;
+            const data = JSON.parse(readFileSync(join(sessionsDir, f), 'utf8')) as { sessionId?: string };
+            if (data.sessionId === sessionId) return true;
+         }
+      } catch { /* */ }
+      return false;
    },
 
    /**

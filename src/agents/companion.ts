@@ -205,6 +205,10 @@ export const companionAdapter: AgentAdapter = {
       return null;
    },
 
+   isSessionAlive(_sessionId: string): boolean {
+      return false; // Companion sessions are attributed to real agents
+   },
+
    getInstructionsPath(): string | null {
       return null;
    },

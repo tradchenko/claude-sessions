@@ -195,7 +195,22 @@ export const qwenAdapter: AgentAdapter = {
    },
 
    getResumeCommand(sessionId: string): string[] | null {
-      return ['qwen', '--resume', sessionId];
+      const cli = findQwenCli();
+      if (!cli) return null;
+      return [cli, '--resume', sessionId];
+   },
+
+   isSessionAlive(sessionId: string): boolean {
+      // Qwen stores chats in ~/.qwen/projects/{project}/chats/{sessionId}.jsonl
+      const projectsDir = join(QWEN_HOME, 'projects');
+      if (!existsSync(projectsDir)) return false;
+      try {
+         for (const proj of readdirSync(projectsDir)) {
+            const chatFile = join(projectsDir, proj, 'chats', `${sessionId}.jsonl`);
+            if (existsSync(chatFile)) return true;
+         }
+      } catch { /* */ }
+      return false;
    },
 
    getInstructionsPath(): string | null {

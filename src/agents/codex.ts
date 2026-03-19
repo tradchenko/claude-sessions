@@ -4,7 +4,7 @@
  */
 
 import { join } from 'path';
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
@@ -226,6 +226,24 @@ export const codexAdapter: AgentAdapter = {
       if (!cliBin) return null;
 
       return [cliBin, '--resume', sessionId];
+   },
+
+   isSessionAlive(sessionId: string): boolean {
+      // Codex stores sessions in ~/.codex/sessions/YYYY/MM/DD/rollout-*-{sessionId}.jsonl
+      const sessionsDir = join(CODEX_DIR, 'sessions');
+      if (!existsSync(sessionsDir)) return false;
+      try {
+         // Recursive search — check if any file contains the session ID
+         const search = (dir: string): boolean => {
+            for (const entry of readdirSync(dir, { withFileTypes: true })) {
+               const full = join(dir, entry.name);
+               if (entry.isDirectory()) { if (search(full)) return true; }
+               else if (entry.name.includes(sessionId)) return true;
+            }
+            return false;
+         };
+         return search(sessionsDir);
+      } catch { return false; }
    },
 
    /**
