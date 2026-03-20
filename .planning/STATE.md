@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-20T20:00:00.000Z"
+last_updated: "2026-03-21T00:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
@@ -27,7 +27,7 @@ Status: In Progress
 |-------|------|--------|----------|
 | 1 | Аудит и тест-инфраструктура | Completed | 100% |
 | 2 | Стабилизация ядра (адаптеры и сессии) | Completed | 100% |
-| 3 | Подсистема памяти | In Progress | 40% |
+| 3 | Подсистема памяти | In Progress | 80% |
 | 4 | Миграция и финальная интеграция | Not Started | 0% |
 
 ## Plan Progress (Phase 3)
@@ -37,7 +37,7 @@ Status: In Progress
 | 03-02 | L0 extraction, hotness, dedup | Completed |
 | 03-03 | — | Not Started |
 | 03-04 | extract-memory CLI команда end-to-end | Completed |
-| 03-05 | — | Not Started |
+| 03-05 | Unit тесты подсистемы памяти и README verification | Completed |
 
 ## Last Completed
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
@@ -52,6 +52,7 @@ Status: In Progress
 - Plan 03-01 завершён 2026-03-20: i18n монолит (2282 строки) → 6 модулей в src/core/i18n/, 17 импортов обновлены, 213 тестов зелёные
 - Plan 03-02 завершён 2026-03-20: L0Data+agent/duration/commands/errors, tau=60, FUZZY_THRESHOLD=0.5+merge, stale tmp cleanup. 213 тестов зелёные
 - Plan 03-04 завершён 2026-03-21: extract-memory CLI команда end-to-end, src/commands/extract-memory.ts создан, routing обновлён, 213 тестов зелёные
+- Plan 03-05 завершён 2026-03-21: 6 тест-файлов (86 новых тестов), 299 pass total — fixtures (4 агента), hotness, dedup, index, extract-l0, extract-l1, catalog; README флаги extract-memory задокументированы
 
 ## Active Tasks
 _Нет активных задач_
