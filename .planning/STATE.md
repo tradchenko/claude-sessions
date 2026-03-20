@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-20T22:00:00.000Z"
+last_updated: "2026-03-20T23:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 6
+  total_plans: 7
   completed_plans: 7
 ---
 
@@ -39,6 +39,7 @@ Status: In Progress
 | 02-04 | List: дедупликация, фильтры, пустое состояние | Completed |
 | 02-05 | Restore: мультиагентность и идемпотентность | Completed |
 | 02-06 | TUI picker: SIGWINCH и стабильность навигации | Completed |
+| 02-07 | Unit тесты на адаптеры с DI | Completed |
 
 ## Last Completed
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
@@ -49,6 +50,7 @@ Status: In Progress
 - Plan 02-04 завершён 2026-03-20: дедупликация (Map по id+project), --agent фильтр, noSessionsMatchFilter i18n, 94 теста зелёные
 - Plan 02-05 завершён 2026-03-20: restore для 5 агентов через registry, идемпотентность, atomic write, frontmatter метаданные, 157 тестов зелёные
 - Plan 02-06 завершён 2026-03-20: SIGWINCH+debounce, cleanup без memory leak, ошибки resume в status bar, навигация при 0 сессий, 94 тестов зелёные
+- Plan 02-07 завершён 2026-03-20: 6 тест-файлов (~89 новых тестов), 213 pass total — adapter-di, adapter-resume, session-dedup, restore-idempotent, error-format, picker-resize
 
 ## Active Tasks
 _Нет активных задач_

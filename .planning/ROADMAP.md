@@ -40,6 +40,7 @@
 | 02-04 | Дедупликация сессий в list | ✅ Completed |
 | 02-05 | Restore: мультиагентность и идемпотентность | ✅ Completed |
 | 02-06 | TUI picker: SIGWINCH и стабильность навигации | ✅ Completed |
+| 02-07 | Unit тесты на адаптеры с DI | ✅ Completed |
 
 **Success Criteria:**
 1. `claude-sessions resume <id>` запускает сессию для каждого из 5 агентов; при отсутствии сессии — понятная ошибка без stack trace
