@@ -16,7 +16,6 @@
 
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { spawnSync } from 'child_process';
 import { t } from './core/i18n/index.js';
 import { handleFatalError } from './core/errors.js';
 
@@ -124,50 +123,8 @@ switch (command) {
    }
 
    case 'extract-memory': {
-      const { readIndex } = await import('./memory/index.js');
-      const { MEMORY_INDEX, PROJECTS_DIR } = await import('./core/config.js');
-      const { checkPendingExtractions } = await import('./sessions/loader.js');
-
-      const index = readIndex(MEMORY_INDEX);
-      const extractScript = join(__dirname, 'memory', 'extract-l1.js');
-      // Type cast: MemoryIndex is structurally compatible with UnifiedIndex
-      const unifiedIndex = index as unknown as Parameters<typeof checkPendingExtractions>[0];
-
-      let sessionIds: string[];
-      if (filteredArgs.includes('--all')) {
-         sessionIds = checkPendingExtractions(unifiedIndex);
-      } else if (filteredArgs[1] && !filteredArgs[1].startsWith('-')) {
-         sessionIds = [filteredArgs[1]];
-      } else {
-         sessionIds = checkPendingExtractions(unifiedIndex).slice(0, 5);
-      }
-
-      if (sessionIds.length === 0) {
-         console.log('✅ No sessions pending L1 extraction.');
-         break;
-      }
-
-      console.log(`Extracting memories from ${sessionIds.length} sessions...\n`);
-      let success = 0;
-      let failed = 0;
-      for (const sid of sessionIds) {
-         const sessionMeta = index.sessions[sid];
-         const project = sessionMeta?.project || sessionMeta?.l0?.project || '';
-         process.stdout.write(`  ${sid.slice(0, 8)}... `);
-         const proc = spawnSync(process.execPath, [extractScript, sid, project], {
-            encoding: 'utf8',
-            timeout: 120_000,
-            env: { ...process.env, MEMORY_DIR: join(MEMORY_INDEX, '..'), PROJECTS_DIR },
-         });
-         if (proc.status === 0) {
-            console.log('✅');
-            success++;
-         } else {
-            console.log('❌');
-            failed++;
-         }
-      }
-      console.log(`\nDone: ${success} extracted, ${failed} failed.`);
+      const { default: extractMemory } = await import('./commands/extract-memory.js');
+      await extractMemory(filteredArgs.slice(1));
       break;
    }
 
