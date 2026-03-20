@@ -10,7 +10,7 @@ import { createInterface } from 'readline';
 import { loadSessions } from '../sessions/loader.js';
 import { CLAUDE_DIR } from '../core/config.js';
 import type { Session } from '../sessions/loader.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 /** Найти все недоступные сессии (нет JSONL и нет snapshot) */
 async function findOrphanedSessions(): Promise<Session[]> {

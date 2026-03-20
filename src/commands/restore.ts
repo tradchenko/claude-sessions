@@ -10,7 +10,7 @@ import { execFileSync } from 'child_process';
 import { createInterface } from 'readline';
 import { SESSION_INDEX, SNAPSHOTS_DIR, findSessionJsonl } from '../core/config.js';
 import { AdapterError } from '../core/errors.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 /** Сообщение в диалоге */
 interface ConversationMessage {

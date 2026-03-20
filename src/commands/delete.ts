@@ -4,7 +4,7 @@
 
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { HISTORY_FILE, SESSION_INDEX, findSessionJsonl } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 /**
  * Validates sessionId format (UUID or hex string)

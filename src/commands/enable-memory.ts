@@ -7,7 +7,7 @@ import { execSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import type { AgentInfo } from '../agents/types.js';
 import { findCli } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 /** Universal memory instructions section for any agent */
 const MEMORY_SECTION = `

@@ -23,7 +23,7 @@ import {
    PROJECTS_DIR,
    ensureClaudeDir,
 } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 import { migrateSessionIndex, generateL0ForExistingSessions } from '../memory/migrate.js';
 import { writeIndex } from '../memory/index.js';
 import { enableMemory } from './enable-memory.js';

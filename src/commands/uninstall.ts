@@ -5,7 +5,7 @@
 import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { COMMANDS_DIR, SCRIPTS_DIR, SETTINGS_FILE, CLAUDE_DIR } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 interface ClaudeSettings {
    hooks?: {

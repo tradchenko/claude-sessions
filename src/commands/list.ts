@@ -5,7 +5,7 @@
 import { loadSessions } from '../sessions/loader.js';
 import { readSessionCache } from '../sessions/cache.js';
 import { ensureClaudeDir } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 import { getAdapter } from '../agents/registry.js';
 import type { AgentId } from '../agents/types.js';
 

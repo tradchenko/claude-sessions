@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { detectAgents } from '../agents/registry.js';
 import type { AgentInfo } from '../agents/types.js';
 import { findCli } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 interface ClaudeSettings {
    hooks?: {

@@ -7,7 +7,7 @@ import { join } from 'path';
 import { homedir, platform } from 'os';
 import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { execSync } from 'child_process';
-import { t, getLocale } from './i18n.js';
+import { t, getLocale } from './i18n/index.js';
 
 /** Supported platforms */
 export type Platform = 'darwin' | 'linux' | 'win32';

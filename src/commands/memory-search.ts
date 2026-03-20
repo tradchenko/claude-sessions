@@ -4,7 +4,7 @@
 
 import { readIndex } from '../memory/index.js';
 import { MEMORY_INDEX } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 /** Memory entry structure */
 interface MemoryEntry {

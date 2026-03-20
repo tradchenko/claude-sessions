@@ -15,7 +15,7 @@ import {
   CLAUDE_DIR,
   findSessionJsonl,
 } from "../core/config.js";
-import { t } from "../core/i18n.js";
+import { t } from '../core/i18n/index.js';
 import { AdapterError } from "../core/errors.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

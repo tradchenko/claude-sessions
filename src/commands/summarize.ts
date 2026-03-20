@@ -7,7 +7,7 @@ import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { spawnSync } from 'child_process';
 import { SESSION_INDEX, PROJECTS_DIR, ensureClaudeDir, findClaudeCli } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 import { loadSessions, writeSessionIndex } from '../sessions/loader.js';
 import { writeSessionCache } from '../sessions/cache.js';
 

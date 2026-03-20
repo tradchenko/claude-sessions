@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 
 const SESSION_INDEX = join(homedir(), '.claude', 'session-index.json');
 

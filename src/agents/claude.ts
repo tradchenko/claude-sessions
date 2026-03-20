@@ -22,7 +22,7 @@ import {
    formatDate,
    shortProjectName,
 } from '../core/config.js';
-import { t } from '../core/i18n.js';
+import { t } from '../core/i18n/index.js';
 import { safeReadJson } from '../utils/index.js';
 import { BaseAgentAdapter } from './base-adapter.js';
 import { AdapterError } from '../core/errors.js';

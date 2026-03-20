@@ -17,7 +17,7 @@
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
-import { t } from './core/i18n.js';
+import { t } from './core/i18n/index.js';
 import { handleFatalError } from './core/errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
