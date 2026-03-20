@@ -364,8 +364,22 @@ export default async function picker(args: string[] = []): Promise<void> {
       process.exit(1);
     }
     const { getAdapter } = await import("../agents/registry.js");
+    const { formatUserError, getExitCode } = await import("../core/errors.js");
     const adapter = getAdapter(s.agent as import("../agents/types.js").AgentId);
-    const resumeCmd = adapter?.getResumeCommand(s.id);
+
+    let resumeCmd: string[] | null | undefined;
+    try {
+      resumeCmd = adapter?.getResumeCommand(s.id);
+    } catch (e: unknown) {
+      if (e instanceof AdapterError) {
+        console.error(`\n${formatUserError(e)}\n`);
+        process.exit(getExitCode(e));
+      }
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error(`\n❌ ${msg}\n`);
+      process.exit(1);
+    }
+
     if (!resumeCmd || resumeCmd.length === 0) {
       console.error(
         `\n❌ ${t("pickerCliNotFound", s.agent)}\n`,

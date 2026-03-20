@@ -88,10 +88,13 @@ export default async function list(args: string[] = []): Promise<void> {
       console.log(`${num}. ${label} [${s.dateStr}] 📁 ${s.project}${msgCount}${via}`);
       console.log(`    💬 ${s.summary.slice(0, 80)}`);
       const adapter = getAdapter(s.agent as AgentId);
-      const resumeCmd = adapter?.getResumeCommand(s.id);
-      if (resumeCmd) {
-         console.log(`    ▶  ${resumeCmd.join(' ')}`);
-      }
+      // getResumeCommand может бросить AdapterError — игнорируем в list (только для отображения)
+      try {
+         const resumeCmd = adapter?.getResumeCommand(s.id);
+         if (resumeCmd) {
+            console.log(`    ▶  ${resumeCmd.join(' ')}`);
+         }
+      } catch { /* агент не поддерживает resume или не установлен */ }
       console.log('─'.repeat(100));
    }
 
