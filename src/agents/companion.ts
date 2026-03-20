@@ -3,13 +3,15 @@
  * Companion is not an agent itself — it's a launcher utility.
  * Sessions are attributed to the actual agent (Claude, Codex, etc.)
  * with viaCompanion: true flag.
+ *
+ * Реализует AgentAdapter через композицию (не наследует BaseAgentAdapter).
  */
 
 import { existsSync, readdirSync, createReadStream } from 'fs';
 import { join } from 'path';
 import { createInterface } from 'readline';
 
-import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
+import type { AgentAdapter, AgentId, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { HOME, formatDate, shortProjectName, SNAPSHOTS_DIR } from '../core/config.js';
 import { readSessionIndex } from '../sessions/loader.js';
@@ -145,17 +147,25 @@ export async function openInCompanionViaApi(sessionId: string, cwd: string): Pro
    }
 }
 
-export const companionAdapter: AgentAdapter = {
-   id: 'companion',
-   name: isForkDetected() ? 'Companion (fork)' : 'Companion',
-   icon: '⬡',
+/**
+ * Адаптер Companion — реализует AgentAdapter через композицию.
+ * Не наследует BaseAgentAdapter: Companion не является настоящим агентом,
+ * а launcher-утилитой, атрибутирующей сессии к реальным агентам.
+ */
+export class CompanionAdapter implements AgentAdapter {
+   readonly id = 'companion' as AgentId;
+   readonly icon = '⬡';
+
+   get name(): string {
+      return isForkDetected() ? 'Companion (fork)' : 'Companion';
+   }
 
    detect(): AgentInfo | null {
       if (!isCompanionDetected()) return null;
 
       return {
          id: 'companion',
-         name: isForkDetected() ? 'Companion (fork)' : 'Companion',
+         name: this.name,
          icon: '⬡',
          homeDir: COMPANION_DIR,
          cliBin: null,
@@ -163,11 +173,11 @@ export const companionAdapter: AgentAdapter = {
          hooksSupport: false,
          resumeSupport: false,
       };
-   },
+   }
 
    /**
-    * Loads Companion sessions, attributing them to actual agents.
-    * Each session gets agent = actual agent + viaCompanion = true.
+    * Загружает сессии Companion, атрибутируя их к реальным агентам.
+    * Каждая сессия получает agent = реальный агент + viaCompanion = true.
     */
    async loadSessions(options?: AgentLoadOptions): Promise<Session[]> {
       if (!existsSync(RECORDINGS_DIR)) return [];
@@ -253,19 +263,19 @@ export const companionAdapter: AgentAdapter = {
 
       result.sort((a, b) => b.lastTs - a.lastTs);
       return result.slice(0, limit);
-   },
+   }
 
-   getResumeCommand(): string[] | null {
+   getResumeCommand(_sessionId: string): string[] | null {
       return null;
-   },
+   }
 
    isSessionAlive(_sessionId: string): boolean {
       return false; // Companion sessions are attributed to real agents
-   },
+   }
 
    getInstructionsPath(): string | null {
       return null;
-   },
+   }
 
    /**
     * Формирует команду для открытия сессии в веб-интерфейсе Companion.
@@ -277,5 +287,8 @@ export const companionAdapter: AgentAdapter = {
       const port = process.env.COMPANION_PORT || '3456';
       const url = `http://localhost:${port}/#/session/${sessionId}`;
       return ['open', url];
-   },
-};
+   }
+}
+
+/** Singleton для обратной совместимости */
+export const companionAdapter = new CompanionAdapter();
