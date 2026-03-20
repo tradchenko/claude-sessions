@@ -8,9 +8,10 @@ import { existsSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
 import { parseJsonlFile } from '../utils/index.js';
-import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
+import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Entry from Codex CLI history.jsonl */
 interface CodexHistoryEntry {
@@ -168,11 +169,17 @@ function accumulatorsToSessions(accumulators: Map<string, CodexSessionAccumulato
 const CODEX_DIR = resolveCodexDir();
 const CODEX_HISTORY = join(CODEX_DIR, 'history.jsonl');
 
-/** Codex CLI adapter for claude-sessions */
-export const codexAdapter: AgentAdapter = {
-   id: 'codex',
-   name: 'Codex CLI',
-   icon: '\u25C6',
+/**
+ * Адаптер Codex CLI — класс с DI файловой системы
+ */
+export class CodexAdapter extends BaseAgentAdapter {
+   readonly id = 'codex' as const;
+   readonly name = 'Codex CLI';
+   readonly icon = '\u25C6';
+
+   constructor(fsDeps?: FsDeps) {
+      super(fsDeps);
+   }
 
    /**
     * Checks if Codex CLI is installed on the system.
@@ -195,7 +202,7 @@ export const codexAdapter: AgentAdapter = {
          hooksSupport: false,
          resumeSupport: true,
       };
-   },
+   }
 
    /**
     * Loads sessions from ~/.codex/history.jsonl.
@@ -207,15 +214,15 @@ export const codexAdapter: AgentAdapter = {
 
       const accumulators = parseHistory(CODEX_HISTORY);
       return accumulatorsToSessions(accumulators, options);
-   },
+   }
 
    /**
     * Builds command for Codex session resume.
+    * Codex CLI не поддерживает --resume (будет исправлено в плане 03).
     */
    getResumeCommand(_sessionId: string): string[] | null {
-      // Codex CLI не поддерживает --resume
       return null;
-   },
+   }
 
    isSessionAlive(sessionId: string): boolean {
       // Codex stores sessions in ~/.codex/sessions/YYYY/MM/DD/rollout-*-{sessionId}.jsonl
@@ -233,7 +240,7 @@ export const codexAdapter: AgentAdapter = {
          };
          return search(sessionsDir);
       } catch { return false; }
-   },
+   }
 
    /**
     * Returns path to instructions file (AGENTS.md in project root).
@@ -245,5 +252,8 @@ export const codexAdapter: AgentAdapter = {
       const agentsMd = join(cwd, 'AGENTS.md');
       if (existsSync(agentsMd)) return agentsMd;
       return null;
-   },
-};
+   }
+}
+
+/** Singleton для обратной совместимости */
+export const codexAdapter = new CodexAdapter();

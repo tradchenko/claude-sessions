@@ -7,7 +7,7 @@ import { existsSync, statSync, createReadStream, readdirSync } from 'fs';
 import { createInterface } from 'readline';
 import { join } from 'path';
 
-import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
+import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import {
    HOME,
@@ -24,6 +24,7 @@ import {
 } from '../core/config.js';
 import { t } from '../core/i18n.js';
 import { safeReadJson } from '../utils/index.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Event entry from history.jsonl */
 interface HistoryEvent {
@@ -186,12 +187,16 @@ async function parseHistory(): Promise<Map<string, SessionAccumulator>> {
 }
 
 /**
- * Claude Code adapter
+ * Адаптер Claude Code — класс с DI файловой системы
  */
-export const claudeAdapter: AgentAdapter = {
-   id: 'claude',
-   name: 'Claude Code',
-   icon: '●',
+export class ClaudeAdapter extends BaseAgentAdapter {
+   readonly id = 'claude' as const;
+   readonly name = 'Claude Code';
+   readonly icon = '●';
+
+   constructor(fsDeps?: FsDeps) {
+      super(fsDeps);
+   }
 
    /**
     * Detects installed Claude Code
@@ -210,7 +215,7 @@ export const claudeAdapter: AgentAdapter = {
          hooksSupport: true,
          resumeSupport: true,
       };
-   },
+   }
 
    /**
     * Loads Claude Code sessions from history.jsonl
@@ -263,7 +268,7 @@ export const claudeAdapter: AgentAdapter = {
             hasSnapshot: snapshotIds.has(s.id),
          };
       });
-   },
+   }
 
    /**
     * Command to restore a session: claude --resume <sessionId>
@@ -272,7 +277,7 @@ export const claudeAdapter: AgentAdapter = {
       const cliBin = findClaudeCli();
       if (!cliBin) return null;
       return [cliBin, '--resume', sessionId];
-   },
+   }
 
    isSessionAlive(sessionId: string): boolean {
       const sessionsDir = join(HOME, '.claude', 'sessions');
@@ -285,7 +290,7 @@ export const claudeAdapter: AgentAdapter = {
          }
       } catch { /* */ }
       return false;
-   },
+   }
 
    /**
     * Path to CLAUDE.md for memory injection
@@ -295,5 +300,8 @@ export const claudeAdapter: AgentAdapter = {
       const globalPath = join(HOME, '.claude', INSTRUCTIONS_FILENAME);
       if (existsSync(globalPath)) return globalPath;
       return null;
-   },
-};
+   }
+}
+
+/** Singleton для обратной совместимости */
+export const claudeAdapter = new ClaudeAdapter();
