@@ -12,7 +12,7 @@ Status: In Progress
 ## Phase Status
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
-| 1 | Аудит и тест-инфраструктура | In Progress | 40% |
+| 1 | Аудит и тест-инфраструктура | In Progress | 60% |
 | 2 | Стабилизация ядра (адаптеры и сессии) | Not Started | 0% |
 | 3 | Подсистема памяти | Not Started | 0% |
 | 4 | Миграция и финальная интеграция | Not Started | 0% |
@@ -22,13 +22,14 @@ Status: In Progress
 |------|-------|--------|
 | 01-01 | Аудит тест-инфраструктуры | Completed |
 | 01-02 | Fixture-файлы и тесты JSONL edge cases | Completed |
-| 01-03 | — | Not Started |
+| 01-03 | Session identity тесты и fixture-based матрица | Completed |
 | 01-04 | — | Not Started |
 | 01-05 | — | Not Started |
 
 ## Last Completed
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
 - Plan 01-02 завершён 2026-03-20: 19 тестов (DATA-01..07 покрыты), npm test зелёный
+- Plan 01-03 завершён 2026-03-20: session identity тесты (25), fixture матрица (24), 68 тестов total
 
 ## Active Tasks
 _Нет активных задач_

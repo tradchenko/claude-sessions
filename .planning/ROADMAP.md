@@ -10,19 +10,20 @@
 ### Phase 1: Аудит и тест-инфраструктура
 **Goal:** Зафиксировать текущее поведение и создать тест-инфраструктуру до любых изменений кода.
 **Requirements:** TEST-07, TEST-02, TEST-06, CODE-02, SESS-15, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
-**Status:** In Progress (40%)
+**Status:** In Progress (60%)
 
 | Plan | Title | Status |
 |------|-------|--------|
 | 01-01 | Аудит тест-инфраструктуры | ✅ Completed |
 | 01-02 | Fixture-файлы и тесты JSONL edge cases | ✅ Completed |
+| 01-03 | Session identity тесты и fixture-based матрица | ✅ Completed |
 
 **Success Criteria:**
-1. `npm test` запускается и выводит результаты без ошибок конфигурации ✅ (19 тестов, 0 падений)
+1. `npm test` запускается и выводит результаты без ошибок конфигурации ✅ (68 тестов, 0 падений)
 2. TypeScript компилируется с `strict` + `noUncheckedIndexedAccess` ✅ (исправлены все ошибки, ESLint настроен)
 3. Fixture-файлы для JSONL edge cases существуют (truncated, BOM, null fields, 10MB+) ✅
-4. Session identity для каждого агента задокументирована в виде проходящих тестов
-5. Пользователь может запустить `claude-sessions list` и получить список без крэша даже при повреждённых данных
+4. Session identity для каждого агента задокументирована в виде проходящих тестов ✅ (25 тестов)
+5. Пользователь может запустить `claude-sessions list` и получить список без крэша даже при повреждённых данных ✅ (интеграционный тест)
 
 ---
 
