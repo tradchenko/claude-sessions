@@ -59,7 +59,7 @@ Companion is not a separate agent — its sessions are attributed to the actual 
 | `cs memory-search <q>` | Search extracted memories |
 | `cs enable-memory` | Enable memory integration |
 | `cs disable-memory` | Disable memory integration |
-| `cs extract-memory` | Manually trigger memory extraction |
+| `cs extract-memory [--agent <id>] [--session <id>] [--all]` | Manually trigger memory extraction |
 | `cs cleanup` | Remove orphaned sessions with no data (`--dry-run` for preview) |
 
 ## TUI picker
@@ -118,6 +118,15 @@ Automatic knowledge extraction from coding sessions across all agents. Shared me
 - **Hooks** (Claude Code) — Stop hook extracts L0 instantly, spawns background L1
 - **Lazy** (Codex, Qwen, Gemini) — discovered on next `cs` launch, extracted in background
 - **Manual** — `cs extract-memory` triggers extraction on demand
+
+```
+cs extract-memory                  # pending sessions only (no L0/L1 yet)
+cs extract-memory --all            # reprocess all sessions
+cs extract-memory --agent claude   # filter by agent (claude, codex, qwen, companion, gemini)
+cs extract-memory --session <id>   # specific session by ID
+```
+
+Pipeline: load sessions → L0 extraction (JSONL parsing, instant) → save to index.sessions → spawn background L1 (LLM extraction)
 
 ### Three layers
 
