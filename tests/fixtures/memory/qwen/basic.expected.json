@@ -1,0 +1,7 @@
+{
+  "summary": "Напиши скрипт для автоматической генерации index.ts из директории src/components/",
+  "project": "test-project",
+  "messageCount": 6,
+  "files": ["src/components/", "scripts/gen-index.ts", "src/components/index.ts"],
+  "agent": "qwen"
+}

@@ -1,0 +1,6 @@
+{"event":"message","role":"user","text":"Помоги настроить ESLint и Prettier для TypeScript проекта","session":"companion-sess-001","ts":1705316400000}
+{"event":"message","role":"assistant","text":"Установлю eslint, @typescript-eslint/parser, prettier. Создам .eslintrc.json и .prettierrc. Конфиг: tabWidth=3, singleQuote=true.","session":"companion-sess-001","ts":1705316420000}
+{"event":"message","role":"user","text":"Добавь правило для запрета any типа","session":"companion-sess-001","ts":1705316500000}
+{"event":"message","role":"assistant","text":"Добавил @typescript-eslint/no-explicit-any: error в .eslintrc.json. Исправил существующие any в src/types.ts на unknown.","session":"companion-sess-001","ts":1705316530000}
+{"event":"message","role":"user","text":"Запусти: npx eslint src/ --fix","session":"companion-sess-001","ts":1705316600000}
+{"event":"message","role":"assistant","text":"Error: 3 файла не прошли линтер. Исправлено: заменил any на unknown, добавил type assertions где нужно. Повторный запуск — 0 ошибок.","session":"companion-sess-001","ts":1705316640000}

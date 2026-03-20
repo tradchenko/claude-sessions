@@ -1,0 +1,7 @@
+{
+  "summary": "Реализуй алгоритм бинарного поиска в src/algorithms/binary-search.ts с полной типизацией TypeScript",
+  "project": "test-project",
+  "messageCount": 6,
+  "files": ["src/algorithms/binary-search.ts", "tests/binary-search.test.ts"],
+  "agent": "codex"
+}

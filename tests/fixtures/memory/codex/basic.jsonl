@@ -1,0 +1,6 @@
+{"role":"user","content":"Реализуй алгоритм бинарного поиска в src/algorithms/binary-search.ts с полной типизацией TypeScript","id":"codex-msg-001","timestamp":1705312800000}
+{"role":"assistant","content":"Реализую generic функцию binarySearch<T> с компаратором. Файл: src/algorithms/binary-search.ts","id":"codex-msg-002","timestamp":1705312815000}
+{"role":"user","content":"Добавь unit тесты в tests/binary-search.test.ts"},"id":"codex-msg-003","timestamp":1705312900000}
+{"role":"assistant","content":"Создал тесты для: базового случая, пустого массива, одного элемента, крайних значений. Failed: при дубликатах возвращает первый индекс — это правильно.","id":"codex-msg-004","timestamp":1705312950000}
+{"role":"user","content":"$ npm run test -- binary-search","id":"codex-msg-005","timestamp":1705313000000}
+{"role":"assistant","content":"Error: тест на отсутствующий элемент провален. Исправлено: возвращать -1 вместо undefined. Все 12 тестов зелёные.","id":"codex-msg-006","timestamp":1705313030000}

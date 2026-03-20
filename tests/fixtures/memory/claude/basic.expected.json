@@ -1,0 +1,7 @@
+{
+  "summary": "Помоги мне реализовать функцию для парсинга JSONL файлов в src/utils/parser.ts",
+  "project": "test-project",
+  "messageCount": 6,
+  "files": ["src/utils/parser.ts", "tests/jsonl-parser.test.mjs"],
+  "agent": "claude"
+}

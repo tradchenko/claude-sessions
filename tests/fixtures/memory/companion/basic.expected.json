@@ -1,0 +1,7 @@
+{
+  "summary": "Помоги настроить ESLint и Prettier для TypeScript проекта",
+  "project": "test-project",
+  "messageCount": 6,
+  "files": [".eslintrc.json", ".prettierrc", "src/types.ts"],
+  "agent": "companion"
+}

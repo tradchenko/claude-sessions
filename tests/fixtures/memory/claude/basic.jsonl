@@ -1,0 +1,6 @@
+{"type":"human","message":{"role":"user","content":"Помоги мне реализовать функцию для парсинга JSONL файлов в src/utils/parser.ts"},"uuid":"msg-001","timestamp":"2024-01-15T10:00:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":"Создам функцию parseJSONL в src/utils/parser.ts. Она будет читать файл построчно и парсить каждую строку как JSON объект."},"uuid":"msg-002","timestamp":"2024-01-15T10:00:10.000Z"}
+{"type":"human","message":{"role":"user","content":"Добавь обработку ошибок — невалидные строки должны пропускаться без exception"},"uuid":"msg-003","timestamp":"2024-01-15T10:01:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":"Добавлю try/catch вокруг JSON.parse. Ошибки будут логироваться через console.error и строка пропускается. Результат: массив валидных объектов."},"uuid":"msg-004","timestamp":"2024-01-15T10:01:15.000Z"}
+{"type":"human","message":{"role":"user","content":"Запусти тесты: npm test -- tests/jsonl-parser.test.mjs"},"uuid":"msg-005","timestamp":"2024-01-15T10:02:00.000Z"}
+{"type":"assistant","message":{"role":"assistant","content":"```bash\nnpm test -- tests/jsonl-parser.test.mjs\n```\nВсе 8 тестов прошли успешно. Error: неожиданное поведение в edge case с пустыми строками исправлено."},"uuid":"msg-006","timestamp":"2024-01-15T10:02:30.000Z"}

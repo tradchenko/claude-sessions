@@ -1,0 +1,7 @@
+not valid json at all
+{"incomplete": true, "missing_closing_brace"
+{"type": "human", "message": {"content": "валидная строка для проверки graceful handling"}}
+null
+undefined
+{"": ""}
+[1,2,3]
