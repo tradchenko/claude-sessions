@@ -227,17 +227,8 @@ export function findSessionJsonl(sessionId: string): FoundSessionFile | null {
       } catch { /* */ }
    }
 
-   // Companion: ~/.companion/recordings/*{sessionId}*.jsonl
-   const companionRec = join(HOME, '.companion', 'recordings');
-   if (existsSync(companionRec)) {
-      try {
-         for (const f of readdirSync(companionRec)) {
-            if (f.includes(sessionId) && f.endsWith('.jsonl')) {
-               return { path: join(companionRec, f), projectDir: 'companion' };
-            }
-         }
-      } catch { /* */ }
-   }
+   // Companion recordings — raw protocol dumps, не содержат user/assistant сообщений.
+   // Restore из них невозможен, пропускаем.
 
    return null;
 }
