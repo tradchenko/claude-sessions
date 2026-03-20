@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
+import { readSessionIndex } from '../sessions/loader.js';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
 
 /** Gemini CLI home directory */
@@ -162,12 +163,17 @@ export const geminiAdapter: AgentAdapter = {
          projects = projects.filter((p) => p.name.toLowerCase().includes(sq));
       }
 
+      // Читаем AI-generated summary из session-index
+      const sessionIndex = readSessionIndex();
+
       return projects.slice(0, limit).map((p): Session => {
          const dateStr = formatDate(p.lastTs);
-         const summary = p.commitMsg || p.name;
+         const sessionId = `gemini-${p.name}`;
+         // AI summary из index имеет приоритет над commit message
+         const summary = sessionIndex[sessionId]?.summary || p.commitMsg || p.name;
 
          return {
-            id: `gemini-${p.name}`,
+            id: sessionId,
             project: p.name,
             projectPath: p.path,
             summary,

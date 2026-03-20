@@ -2,7 +2,7 @@
  * Session data loading and processing
  */
 
-import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
+import { readFileSync, writeFileSync, existsSync, statSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
 import {
    HISTORY_FILE,
@@ -28,6 +28,10 @@ export interface Session {
    agent: string;
    /** Session launched via Companion */
    viaCompanion?: boolean;
+   /** JSONL файл доступен для полного restore */
+   hasJsonl?: boolean;
+   /** Snapshot доступен как fallback */
+   hasSnapshot?: boolean;
 }
 
 /** Event entry from history.jsonl */
@@ -119,18 +123,33 @@ export async function loadSessions({
    return allSessions.slice(0, limit);
 }
 
+// Кеш для readSessionIndex — избегаем повторных readFileSync + JSON.parse
+let _cachedIndex: SessionIndex | null = null;
+let _cachedMtime: number = 0;
+
 /**
  * Read summary index (try unified, then fallback to legacy)
+ * Результат кешируется по mtime файла — повторные вызовы не перечитывают диск
  */
 export function readSessionIndex(): SessionIndex {
-   // First try the new unified index
+   // Проверяем mtime основного индекса
    try {
+      const mtime = statSync(MEMORY_INDEX).mtimeMs;
+      if (_cachedIndex && mtime === _cachedMtime) return _cachedIndex;
+
       const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8')) as MemoryIndex;
-      return idx.sessions || {};
+      _cachedIndex = idx.sessions || {};
+      _cachedMtime = mtime;
+      return _cachedIndex;
    } catch {
-      // Fallback to old session-index.json
+      // Fallback к старому session-index.json
       try {
-         return JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as SessionIndex;
+         const mtime = statSync(SESSION_INDEX).mtimeMs;
+         if (_cachedIndex && mtime === _cachedMtime) return _cachedIndex;
+
+         _cachedIndex = JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as SessionIndex;
+         _cachedMtime = mtime;
+         return _cachedIndex;
       } catch {
          return {};
       }

@@ -8,7 +8,7 @@ import { join } from 'path';
 import { spawnSync } from 'child_process';
 import { SESSION_INDEX, PROJECTS_DIR, ensureClaudeDir, findClaudeCli } from '../core/config.js';
 import { t } from '../core/i18n.js';
-import { loadSessions } from '../sessions/loader.js';
+import { loadSessions, writeSessionIndex } from '../sessions/loader.js';
 import { writeSessionCache } from '../sessions/cache.js';
 
 /** "Bad" summaries — indicating no real description */
@@ -19,6 +19,7 @@ interface SessionIndexEntry {
    sessionId?: string;
    summary?: string;
    lastActive?: number;
+   [key: string]: unknown;
 }
 
 /** Summarization result */
@@ -114,7 +115,13 @@ function extractClaudeMessages(projectPath: string, sessionId: string): string[]
 }
 
 function needsSummary(sessionId: string, index: Record<string, SessionIndexEntry>): boolean {
-   const existing = index[sessionId]?.summary;
+   const entry = index[sessionId];
+   if (!entry) return true;
+
+   // Если ранее помечена как неанализируемая — пропускаем
+   if (entry.summary === '__no_data__') return false;
+
+   const existing = entry.summary;
    if (!existing) return true;
    if (BAD_SUMMARIES.some((b) => existing.toLowerCase().startsWith(b.toLowerCase()))) return true;
    if (existing.length < 10) return true;
@@ -165,26 +172,45 @@ export default async function summarize(args: string[] = []): Promise<void> {
    let sessionsData = 'SESSIONS_START\n';
    let count = 0;
 
+   // Множество реальных ID для валидации ответа LLM
+   const validIds = new Set<string>();
+
    for (const s of sessions) {
-      // Try to extract messages from JSONL (works for Claude sessions)
+      // Извлекаем сообщения из JSONL (работает для Claude-сессий)
       const messages = s.projectPath ? extractClaudeMessages(s.projectPath, s.id) : null;
       const project = s.project || 'unknown';
       const date = s.dateStr;
+
+      // Если нет ни JSONL-сообщений, ни осмысленного summary — помечаем как неанализируемую
+      const hasMeaningfulSummary =
+         s.summary && s.summary.length > 5 && !BAD_SUMMARIES.some((b) => s.summary.toLowerCase().startsWith(b.toLowerCase()));
+      if (!messages && !hasMeaningfulSummary) {
+         index[s.id] = {
+            ...index[s.id],
+            sessionId: s.id,
+            summary: '__no_data__',
+            lastActive: index[s.id]?.lastActive || Date.now(),
+         };
+         continue;
+      }
 
       sessionsData += `---SESSION:${s.id}---\n`;
       sessionsData += `Agent: ${s.agent} | Project: ${project} | Date: ${date}\n`;
 
       if (messages) {
          messages.forEach((m, i) => (sessionsData += `${i + 1}. ${m}\n`));
-      } else if (s.summary && s.summary.length > 5) {
-         // Use first message from session loader as context
+      } else if (hasMeaningfulSummary) {
+         // Используем первое сообщение из загрузчика как контекст
          sessionsData += `1. ${s.summary}\n`;
       }
+      validIds.add(s.id);
       count++;
    }
    sessionsData += 'SESSIONS_END';
 
    if (count === 0) {
+      // Сохраняем index с пометками __no_data__ даже если нечего отправлять в LLM
+      writeSessionIndex(index);
       console.log(`\n✅ ${t('allSummarized')}\n`);
       return;
    }
@@ -213,6 +239,8 @@ For EACH session (between ---SESSION:ID--- markers):
 1. Read the user messages
 2. Determine the essence: what was done, what task was being solved
 3. ${t('summaryLangHint')}
+
+IMPORTANT: Return the EXACT full session ID from the ---SESSION:ID--- marker. Do NOT truncate or modify the ID.
 
 Return ONLY a JSON array, no other text:
 [{"id": "session-id", "summary": "short summary"}]
@@ -243,23 +271,60 @@ Bad: "/mcp", "/login", "Short session"`;
       const summaries = JSON.parse(match[0]) as SummaryResult[];
       if (!Array.isArray(summaries)) throw new Error('Response is not an array');
 
-      // Save summaries to index
+      // Резолвим ID из ответа LLM — точное совпадение или prefix-match
+      const resolveId = (rawId: string): string | null => {
+         if (validIds.has(rawId)) return rawId;
+         // LLM мог обрезать ID — ищем по префиксу (минимум 8 символов)
+         if (rawId.length >= 8) {
+            for (const vid of validIds) {
+               if (vid.startsWith(rawId) || rawId.startsWith(vid)) return vid;
+            }
+         }
+         return null;
+      };
+
+      // Сохраняем summary в index
       let saved = 0;
+      let skipped = 0;
       for (const s of summaries) {
          if (!s.id || !s.summary) continue;
+         const resolvedId = resolveId(s.id);
+         if (!resolvedId) {
+            skipped++;
+            continue;
+         }
          const summary = s.summary.replace(/\n/g, ' ').trim().slice(0, 65);
          if (summary.length < 5) continue;
-         index[s.id] = {
-            ...index[s.id],
-            sessionId: s.id,
+         index[resolvedId] = {
+            ...index[resolvedId],
+            sessionId: resolvedId,
             summary,
-            lastActive: index[s.id]?.lastActive || Date.now(),
+            lastActive: index[resolvedId]?.lastActive || Date.now(),
          };
+         // Убираем из validIds чтобы отследить непокрытые сессии
+         validIds.delete(resolvedId);
          saved++;
-         console.log(`   ✅ ${s.id.slice(0, 8)}: ${summary}`);
+         console.log(`   ✅ ${resolvedId.slice(0, 8)}: ${summary}`);
       }
 
-      writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
+      // Сессии, для которых LLM не вернул summary — помечаем чтобы не повторять
+      for (const missedId of validIds) {
+         if (!index[missedId]?.summary || index[missedId]?.summary === '__no_data__') {
+            index[missedId] = {
+               ...index[missedId],
+               sessionId: missedId,
+               summary: '__no_data__',
+               lastActive: index[missedId]?.lastActive || Date.now(),
+            };
+         }
+      }
+
+      if (skipped > 0) {
+         console.log(`   ⚠️  ${skipped} ID из ответа LLM не совпали с реальными`);
+      }
+
+      // Сохраняем в оба индекса (legacy + unified)
+      writeSessionIndex(index);
 
       // Invalidate session cache so next list/picker picks up new summaries
       writeSessionCache([]);

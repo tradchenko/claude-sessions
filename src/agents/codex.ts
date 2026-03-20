@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
+import { readSessionIndex } from '../sessions/loader.js';
 
 /** Entry from Codex CLI history.jsonl */
 interface CodexHistoryEntry {
@@ -135,10 +136,12 @@ function parseHistory(historyPath: string): Map<string, CodexSessionAccumulator>
  */
 function accumulatorsToSessions(accumulators: Map<string, CodexSessionAccumulator>, options?: AgentLoadOptions): Session[] {
    const result: Session[] = [];
+   // Читаем AI-generated summary из session-index (приоритет над первым сообщением)
+   const sessionIndex = readSessionIndex();
 
    for (const acc of accumulators.values()) {
-      // First message as summary
-      const summary = acc.messages[0] ?? '(empty session)';
+      // AI summary имеет приоритет, иначе — первое сообщение
+      const summary = sessionIndex[acc.id]?.summary || acc.messages[0] || '(empty session)';
       const dateStr = formatDate(acc.lastTs);
 
       const session: Session = {

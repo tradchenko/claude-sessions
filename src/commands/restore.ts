@@ -2,18 +2,12 @@
  * Restore session context from JSONL file
  */
 
-import { readFileSync, writeFileSync, readdirSync, existsSync, createReadStream } from 'fs';
+import { readFileSync, writeFileSync, existsSync, createReadStream } from 'fs';
 import { join } from 'path';
 import { execFileSync } from 'child_process';
 import { createInterface } from 'readline';
-import { PROJECTS_DIR, SESSION_INDEX, CLAUDE_DIR, findClaudeCli } from '../core/config.js';
+import { SESSION_INDEX, CLAUDE_DIR, findClaudeCli, findSessionJsonl, SNAPSHOTS_DIR } from '../core/config.js';
 import { t } from '../core/i18n.js';
-
-/** Session file search result */
-interface FoundSession {
-   path: string;
-   projectDir: string;
-}
 
 /** Session message */
 interface ConversationMessage {
@@ -40,18 +34,6 @@ interface SessionEvent {
 interface ExtractOptions {
    headCount?: number;
    tailCount?: number;
-}
-
-/**
- * Finds session JSONL file across all projects
- */
-function findSessionFile(sessionId: string): FoundSession | null {
-   if (!existsSync(PROJECTS_DIR)) return null;
-   for (const dir of readdirSync(PROJECTS_DIR)) {
-      const filePath = join(PROJECTS_DIR, dir, `${sessionId}.jsonl`);
-      if (existsSync(filePath)) return { path: filePath, projectDir: dir };
-   }
-   return null;
 }
 
 /**
@@ -172,9 +154,35 @@ if (isMain && process.argv[2]) {
 }
 
 export default async function restore(sessionId: string): Promise<void> {
-   const found = findSessionFile(sessionId);
+   const found = findSessionJsonl(sessionId);
 
    if (!found) {
+      // Fallback: проверить snapshot
+      const snapshotPath = join(SNAPSHOTS_DIR, `${sessionId}.md`);
+      if (existsSync(snapshotPath)) {
+         console.log(`\n📋 JSONL не найден, восстановление из snapshot...`);
+         // Snapshot уже в формате markdown — использовать напрямую
+         const contextFile = join(CLAUDE_DIR, 'scripts', '.restore-context.md');
+         const snapshotContent = readFileSync(snapshotPath, 'utf8');
+         writeFileSync(contextFile, snapshotContent);
+
+         // Запустить claude с контекстом
+         const claudePath = findClaudeCli();
+         if (!claudePath) {
+            console.log(`Context saved: ${contextFile}`);
+            process.exit(0);
+         }
+
+         const prompt = `Read the file ${contextFile} — it contains a restored conversation snapshot from a previous session. The original JSONL was lost but the snapshot was preserved. Review the context and ask the user how to proceed.`;
+         try {
+            execFileSync(claudePath, [prompt], { stdio: 'inherit', cwd: process.cwd() });
+         } catch {
+            /* */
+         }
+         process.exit(0);
+      }
+
+      // Ни JSONL, ни snapshot не найден
       console.error(`\n❌ ${t('fileNotFound', sessionId)}`);
       console.error(`   ${t('noDataRestore')}\n`);
       process.exit(1);
@@ -225,8 +233,13 @@ export default async function restore(sessionId: string): Promise<void> {
    const prompt = `Read the file ${contextFile} — it contains a restored conversation history from a previous session. Review the context and ask the user how to proceed.`;
 
    try {
-      execFileSync('claude', [prompt], { stdio: 'inherit', cwd });
-   } catch {
-      // Ignore exit errors
+      execFileSync(claudePath, [prompt], { stdio: 'inherit', cwd });
+   } catch (e: unknown) {
+      // Код выхода != 0 при штатном завершении — не ошибка
+      const isExitError = e instanceof Error && 'status' in e;
+      if (!isExitError) {
+         const msg = e instanceof Error ? e.message : String(e);
+         console.error(`\n❌ Ошибка запуска claude CLI: ${msg}\n`);
+      }
    }
 }

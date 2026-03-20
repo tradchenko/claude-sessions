@@ -9,6 +9,7 @@ import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
+import { readSessionIndex } from '../sessions/loader.js';
 
 /** Qwen Code home directory */
 const QWEN_HOME = join(HOME, '.qwen');
@@ -126,6 +127,8 @@ export const qwenAdapter: AgentAdapter = {
       const projectFilter = options?.projectFilter?.toLowerCase();
       const searchQuery = options?.searchQuery?.toLowerCase();
       const sessions: Session[] = [];
+      // Читаем AI-generated summary из session-index
+      const sessionIndex = readSessionIndex();
 
       // Scan project directories
       let projectDirs: string[];
@@ -167,7 +170,8 @@ export const qwenAdapter: AgentAdapter = {
             const sessionId = firstEntry.sessionId;
             const timestamp = firstEntry.timestamp;
             const cwd = firstEntry.cwd || projectPath;
-            const summary = extractFirstUserMessage(entries) || 'Qwen Code session';
+            // AI summary из index имеет приоритет над первым сообщением
+            const summary = sessionIndex[sessionId]?.summary || extractFirstUserMessage(entries) || 'Qwen Code session';
 
             // Filter by content
             if (searchQuery && !summary.toLowerCase().includes(searchQuery)) continue;

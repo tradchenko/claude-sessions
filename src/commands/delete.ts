@@ -2,9 +2,8 @@
  * Delete session with validation and safe JSON parsing
  */
 
-import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'fs';
-import { join } from 'path';
-import { HISTORY_FILE, SESSION_INDEX, PROJECTS_DIR } from '../core/config.js';
+import { readFileSync, writeFileSync, existsSync, unlinkSync } from 'fs';
+import { HISTORY_FILE, SESSION_INDEX, findSessionJsonl } from '../core/config.js';
 import { t } from '../core/i18n.js';
 
 /**
@@ -53,15 +52,11 @@ export default async function deleteSession(sessionId: string): Promise<void> {
       }
    }
 
-   // Remove session JSONL file
-   if (existsSync(PROJECTS_DIR)) {
-      for (const dir of readdirSync(PROJECTS_DIR)) {
-         const sessionFile = join(PROJECTS_DIR, dir, `${sessionId}.jsonl`);
-         if (existsSync(sessionFile)) {
-            unlinkSync(sessionFile);
-            console.log(`   ✅ ${t('removed', sessionFile)}`);
-         }
-      }
+   // Удаление JSONL-файла сессии
+   const found = findSessionJsonl(sessionId);
+   if (found) {
+      unlinkSync(found.path);
+      console.log(`   ✅ ${t('removed', found.path)}`);
    }
 
    console.log(`\n✅ ${t('sessionDeletedFull', sessionId)}\n`);

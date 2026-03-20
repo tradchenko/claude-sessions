@@ -47,6 +47,9 @@ export interface AgentAdapter {
 
    /** Returns path to instructions file for memory injection */
    getInstructionsPath(): string | null;
+
+   /** Возвращает команду для открытия сессии в UI (десктоп/веб). Null если не поддерживается. */
+   getOpenInUiCommand?(sessionId: string): string[] | null;
 }
 
 /** Session loading options */

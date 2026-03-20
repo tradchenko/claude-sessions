@@ -198,6 +198,17 @@ export function saveSessionWithL0({ sessionId, project, indexPath, projectsDir, 
 
    writeIdx(indexPath, index);
 
+   // Сохраняем snapshot для восстановления если JSONL будет удалён
+   if (jsonlPath) {
+      try {
+         import('../memory/snapshot.js')
+            .then(({ saveSessionSnapshot }) => saveSessionSnapshot(sessionId, jsonlPath, project))
+            .catch(() => {});
+      } catch {
+         /* snapshot не критичен */
+      }
+   }
+
    // Launch background L1 extraction (detached) — only if JSONL found and memoryDir set
    if (jsonlPath && memoryDir) {
       try {

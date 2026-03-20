@@ -27,6 +27,16 @@ interface HookSettings {
    [key: string]: unknown;
 }
 
+/** Формат settings.json для Gemini CLI */
+interface GeminiSettings {
+   hooks?: {
+      SessionStart?: Array<Record<string, unknown>>;
+      AfterAgent?: Array<Record<string, unknown>>;
+      [key: string]: unknown;
+   };
+   [key: string]: unknown;
+}
+
 export interface EnableMemoryOptions {
    settingsPath: string;
    claudeMdPath: string;
@@ -89,7 +99,11 @@ export function enableMemoryForAllAgents(agents: AgentInfo[], scriptsDir: string
             enableClaudeHooks(settingsPath, scriptsDir);
          }
       }
-      // Gemini — hooks via `gemini hooks migrate`, skipping for now
+      // Gemini — прямая запись hooks в settings.json
+      if (agent.id === 'gemini') {
+         const settingsPath = join(agent.homeDir, 'settings.json');
+         enableGeminiHooks(settingsPath, scriptsDir);
+      }
       // Codex/Qwen — no hooks, use lazy extraction
    }
 }
@@ -123,4 +137,43 @@ function enableClaudeHooks(settingsPath: string, scriptsDir: string): void {
    } as unknown as Record<string, unknown>);
 
    writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+}
+
+/**
+ * Устанавливает hooks для Gemini CLI (SessionStart + AfterAgent)
+ * Формат hooks Gemini аналогичен Claude, но событие Stop называется AfterAgent
+ */
+function enableGeminiHooks(settingsPath: string, scriptsDir: string): void {
+   const settings: GeminiSettings = existsSync(settingsPath) ? (JSON.parse(readFileSync(settingsPath, 'utf8')) as GeminiSettings) : {};
+   if (!settings.hooks) settings.hooks = {};
+
+   let changed = false;
+
+   // SessionStart — загрузка памяти при старте сессии
+   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+   const startCmd = `node ${join(scriptsDir, 'hooks', 'session-start.js')}`;
+   const startStr = JSON.stringify(settings.hooks.SessionStart);
+   if (!startStr.includes('session-start.js') && !startStr.includes('session-start-hook')) {
+      settings.hooks.SessionStart.push({
+         matcher: '',
+         hooks: [{ type: 'command', command: startCmd }],
+      } as unknown as Record<string, unknown>);
+      changed = true;
+   }
+
+   // AfterAgent — L0 extraction при завершении ответа агента
+   if (!settings.hooks.AfterAgent) settings.hooks.AfterAgent = [];
+   const stopCmd = `node ${join(scriptsDir, 'hooks', 'stop.js')}`;
+   const stopStr = JSON.stringify(settings.hooks.AfterAgent);
+   if (!stopStr.includes('stop.js') && !stopStr.includes('stop-hook')) {
+      settings.hooks.AfterAgent.push({
+         matcher: '',
+         hooks: [{ type: 'command', command: stopCmd }],
+      } as unknown as Record<string, unknown>);
+      changed = true;
+   }
+
+   if (changed) {
+      writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+   }
 }

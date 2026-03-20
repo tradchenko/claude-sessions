@@ -5,7 +5,7 @@
 
 import { join } from 'path';
 import { homedir, platform } from 'os';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, readdirSync, statSync } from 'fs';
 import { execSync } from 'child_process';
 import { t, getLocale } from './i18n.js';
 
@@ -64,6 +64,7 @@ export const MEMORY_INDEX: string = join(MEMORY_DIR, 'index.json');
 export const MEMORY_CONFIG: string = join(MEMORY_DIR, 'config.json');
 export const MEMORIES_DIR: string = join(MEMORY_DIR, 'memories');
 export const MEMORY_LOCK: string = join(MEMORY_DIR, 'index.lock');
+export const SNAPSHOTS_DIR: string = join(MEMORY_DIR, 'snapshots');
 export const MEMORY_ERROR_LOG: string = join(MEMORY_DIR, 'error.log');
 
 /** Memory categories */
@@ -120,6 +121,67 @@ export function formatDate(ts: number | string | Date): string {
    if (days === 1) return `${t('yesterday')} ${time}`;
    if (days < 7) return t('daysAgo', days);
    return d.toLocaleDateString(locale);
+}
+
+/** Результат поиска JSONL-файла сессии */
+export interface FoundSessionFile {
+   path: string;
+   projectDir: string;
+}
+
+/**
+ * Ищет JSONL-файл сессии во всех project-директориях.
+ * Поддерживает два уровня вложенности:
+ *   ~/.claude/projects/{projectDir}/{sessionId}.jsonl
+ *   ~/.claude/projects/{projectDir}/{subDir}/{sessionId}.jsonl
+ * Также проверяет ~/.claude/sessions/ как fallback.
+ */
+export function findSessionJsonl(sessionId: string): FoundSessionFile | null {
+   const fileName = `${sessionId}.jsonl`;
+
+   // Поиск в projects — до 2-х уровней вложенности
+   if (existsSync(PROJECTS_DIR)) {
+      try {
+         for (const dir of readdirSync(PROJECTS_DIR)) {
+            const dirPath = join(PROJECTS_DIR, dir);
+            try {
+               if (!statSync(dirPath).isDirectory()) continue;
+            } catch {
+               continue;
+            }
+
+            // Уровень 1: {projectDir}/{sessionId}.jsonl
+            const filePath = join(dirPath, fileName);
+            if (existsSync(filePath)) return { path: filePath, projectDir: dir };
+
+            // Уровень 2: {projectDir}/{subDir}/{sessionId}.jsonl
+            try {
+               for (const sub of readdirSync(dirPath)) {
+                  const subPath = join(dirPath, sub);
+                  try {
+                     if (!statSync(subPath).isDirectory()) continue;
+                  } catch {
+                     continue;
+                  }
+                  const subFile = join(subPath, fileName);
+                  if (existsSync(subFile)) return { path: subFile, projectDir: dir };
+               }
+            } catch {
+               // Ошибка чтения поддиректории — пропускаем
+            }
+         }
+      } catch {
+         // Ошибка чтения PROJECTS_DIR — продолжаем к fallback
+      }
+   }
+
+   // Fallback: ~/.claude/sessions/{sessionId}.jsonl
+   if (existsSync(SESSIONS_DIR)) {
+      const fallbackPath = join(SESSIONS_DIR, fileName);
+      if (existsSync(fallbackPath)) return { path: fallbackPath, projectDir: 'sessions' };
+   }
+
+   return null;
 }
 
 /**

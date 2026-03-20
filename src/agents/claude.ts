@@ -3,7 +3,7 @@
  * Implements AgentAdapter — session loading, CLI detection, resume.
  */
 
-import { readFileSync, existsSync, createReadStream, readdirSync } from 'fs';
+import { readFileSync, existsSync, statSync, createReadStream, readdirSync } from 'fs';
 import { createInterface } from 'readline';
 import { join } from 'path';
 
@@ -14,8 +14,10 @@ import {
    CLAUDE_DIR,
    HISTORY_FILE,
    SESSIONS_DIR,
+   PROJECTS_DIR,
    SESSION_INDEX,
    MEMORY_INDEX,
+   SNAPSHOTS_DIR,
    findClaudeCli,
    formatDate,
    shortProjectName,
@@ -59,6 +61,63 @@ interface MemoryIndex {
 
 /** Path to the CLAUDE.md instructions file */
 const INSTRUCTIONS_FILENAME = 'CLAUDE.md';
+
+/**
+ * Собирает Set всех sessionId, для которых есть JSONL-файлы.
+ * Обходит projects/ (2 уровня) и sessions/ один раз — O(dirs), без проверки каждой сессии.
+ */
+function collectJsonlIds(): Set<string> {
+   const ids = new Set<string>();
+   const addJsonlFiles = (dirPath: string): void => {
+      try {
+         for (const f of readdirSync(dirPath)) {
+            if (f.endsWith('.jsonl')) ids.add(f.slice(0, -6));
+         }
+      } catch { /* директория недоступна */ }
+   };
+
+   // projects/{dir}/*.jsonl и projects/{dir}/{sub}/*.jsonl
+   if (existsSync(PROJECTS_DIR)) {
+      try {
+         for (const dir of readdirSync(PROJECTS_DIR)) {
+            const dirPath = join(PROJECTS_DIR, dir);
+            try {
+               if (!statSync(dirPath).isDirectory()) continue;
+            } catch { continue; }
+            addJsonlFiles(dirPath);
+            // Уровень 2
+            try {
+               for (const sub of readdirSync(dirPath)) {
+                  const subPath = join(dirPath, sub);
+                  try {
+                     if (!statSync(subPath).isDirectory()) continue;
+                  } catch { continue; }
+                  addJsonlFiles(subPath);
+               }
+            } catch { /* */ }
+         }
+      } catch { /* */ }
+   }
+
+   // Fallback: sessions/*.jsonl
+   if (existsSync(SESSIONS_DIR)) addJsonlFiles(SESSIONS_DIR);
+
+   return ids;
+}
+
+/**
+ * Собирает Set всех sessionId, для которых есть snapshot.
+ */
+function collectSnapshotIds(): Set<string> {
+   const ids = new Set<string>();
+   if (!existsSync(SNAPSHOTS_DIR)) return ids;
+   try {
+      for (const f of readdirSync(SNAPSHOTS_DIR)) {
+         if (f.endsWith('.md')) ids.add(f.slice(0, -3));
+      }
+   } catch { /* */ }
+   return ids;
+}
 
 /**
  * Loads session summary index (unified → legacy fallback)
@@ -166,6 +225,10 @@ export const claudeAdapter: AgentAdapter = {
       const sessionsMap = await parseHistory();
       const index = loadSessionIndex();
 
+      // Собираем Set-ы JSONL и snapshot один раз для всех сессий
+      const jsonlIds = collectJsonlIds();
+      const snapshotIds = collectSnapshotIds();
+
       let sorted = Array.from(sessionsMap.values()).sort((a, b) => b.lastTs - a.lastTs);
 
       // Filter by project
@@ -197,6 +260,8 @@ export const claudeAdapter: AgentAdapter = {
             count: s.count,
             searchText: `${dateStr} ${project} ${summary} ${s.messages.join(' ')}`.toLowerCase(),
             agent: 'claude',
+            hasJsonl: jsonlIds.has(s.id),
+            hasSnapshot: snapshotIds.has(s.id),
          };
       });
    },

@@ -12,6 +12,7 @@ import { createInterface } from 'readline';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { HOME, formatDate, shortProjectName } from '../core/config.js';
+import { readSessionIndex } from '../sessions/loader.js';
 
 /** Companion home directory */
 const COMPANION_DIR = join(HOME, '.companion');
@@ -101,6 +102,50 @@ async function readRecordingHeader(filePath: string): Promise<RecordingHeader | 
    }
 }
 
+/** Порт Companion API */
+function getCompanionPort(): string {
+   return process.env.COMPANION_PORT || '3456';
+}
+
+/**
+ * Открывает любую Claude-сессию в Companion UI через API.
+ * Создаёт wrapper-сессию и открывает её в браузере.
+ */
+export async function openInCompanionViaApi(sessionId: string, cwd: string): Promise<{ ok: true; url: string } | { ok: false; error: string }> {
+   const port = getCompanionPort();
+   const apiUrl = `http://localhost:${port}/api/sessions/create`;
+
+   try {
+      const res = await fetch(apiUrl, {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ resumeSessionAt: sessionId, cwd: cwd || process.cwd(), backend: 'claude' }),
+      });
+
+      if (!res.ok) {
+         const text = await res.text().catch(() => '');
+         return { ok: false, error: `Companion API вернул ${res.status}: ${text}` };
+      }
+
+      const data = (await res.json()) as { sessionId?: string };
+      if (!data.sessionId) return { ok: false, error: 'Companion API не вернул sessionId' };
+
+      const url = `http://localhost:${port}/#/session/${data.sessionId}`;
+      // Открываем в браузере (macOS)
+      const { execFileSync } = await import('child_process');
+      execFileSync('open', [url], { stdio: 'ignore' });
+
+      return { ok: true, url };
+   } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      // Скорее всего Companion не запущен
+      if (msg.includes('ECONNREFUSED') || msg.includes('fetch failed')) {
+         return { ok: false, error: 'Companion не запущен (не удалось подключиться)' };
+      }
+      return { ok: false, error: msg };
+   }
+}
+
 export const companionAdapter: AgentAdapter = {
    id: 'companion',
    name: isForkDetected() ? 'Companion (fork)' : 'Companion',
@@ -130,6 +175,8 @@ export const companionAdapter: AgentAdapter = {
 
       const { projectFilter, searchQuery, limit = 100 } = options || {};
       const sessionNames = loadSessionNames();
+      // Читаем AI-generated summary из session-index
+      const sessionIndex = readSessionIndex();
       const files = readdirSync(RECORDINGS_DIR).filter((f) => f.endsWith('.jsonl'));
 
       // Fast path: parse session_id and timestamp from filenames
@@ -173,7 +220,8 @@ export const companionAdapter: AgentAdapter = {
          const project = shortProjectName(header.cwd);
          const sessionName = sessionNames[sessionId] || '';
          const agent = resolveAgent(sessionName, header.backend_type);
-         const summary = sessionName || project || '';
+         // AI summary из index имеет приоритет, затем имя сессии, затем проект
+         const summary = sessionIndex[sessionId]?.summary || sessionName || project || '';
          const dateStr = formatDate(lastTs);
 
          const session: Session = {
@@ -211,5 +259,17 @@ export const companionAdapter: AgentAdapter = {
 
    getInstructionsPath(): string | null {
       return null;
+   },
+
+   /**
+    * Формирует команду для открытия сессии в веб-интерфейсе Companion.
+    * Использует `open` на macOS для открытия URL в браузере по умолчанию.
+    */
+   getOpenInUiCommand(sessionId: string): string[] | null {
+      if (!isCompanionDetected()) return null;
+      // Порт: 3456 для production, 3457 для dev
+      const port = process.env.COMPANION_PORT || '3456';
+      const url = `http://localhost:${port}/#/session/${sessionId}`;
+      return ['open', url];
    },
 };
