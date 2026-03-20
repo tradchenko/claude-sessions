@@ -36,7 +36,7 @@ Status: In Progress
 | 03-01 | i18n рефакторинг: разбивка монолита на модули | Completed |
 | 03-02 | L0 extraction, hotness, dedup | Completed |
 | 03-03 | — | Not Started |
-| 03-04 | — | Not Started |
+| 03-04 | extract-memory CLI команда end-to-end | Completed |
 | 03-05 | — | Not Started |
 
 ## Last Completed
@@ -51,6 +51,7 @@ Status: In Progress
 - Plan 02-07 завершён 2026-03-20: 6 тест-файлов (~89 новых тестов), 213 pass total — adapter-di, adapter-resume, session-dedup, restore-idempotent, error-format, picker-resize
 - Plan 03-01 завершён 2026-03-20: i18n монолит (2282 строки) → 6 модулей в src/core/i18n/, 17 импортов обновлены, 213 тестов зелёные
 - Plan 03-02 завершён 2026-03-20: L0Data+agent/duration/commands/errors, tau=60, FUZZY_THRESHOLD=0.5+merge, stale tmp cleanup. 213 тестов зелёные
+- Plan 03-04 завершён 2026-03-21: extract-memory CLI команда end-to-end, src/commands/extract-memory.ts создан, routing обновлён, 213 тестов зелёные
 
 ## Active Tasks
 _Нет активных задач_
