@@ -8,11 +8,11 @@ import { join } from 'path';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
 import { parseJsonlFile, safeReadJson } from '../utils/index.js';
-import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
-import { BaseAgentAdapter } from './base-adapter.js';
 import { AdapterError } from '../core/errors.js';
+import { BaseAgentAdapter } from './base-adapter.js';
+import type { AgentInfo, AgentLoadOptions } from './types.js';
 
 /** Qwen Code home directory */
 const QWEN_HOME = join(HOME, '.qwen');
@@ -112,9 +112,7 @@ export class QwenAdapter extends BaseAgentAdapter {
    readonly name = 'Qwen Code';
    readonly icon = '◇';
 
-   constructor(fsDeps?: FsDeps) {
-      super(fsDeps);
-   }
+
 
    detect(): AgentInfo | null {
       if (!existsSync(QWEN_HOME)) return null;

@@ -54,7 +54,7 @@ if (existsSync(SESSION_INDEX)) {
 
 // Find full ID by short prefix
 if (sessionId.length < 36) {
-   const fullId = Object.keys(index).find((k) => k.startsWith(sessionId!));
+   const fullId = Object.keys(index).find((k) => sessionId && k.startsWith(sessionId));
    if (fullId) sessionId = fullId;
 }
 

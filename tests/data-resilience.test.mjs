@@ -6,13 +6,10 @@
 
 import { describe, it, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, unlinkSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, unlinkSync, rmSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { fileURLToPath } from 'node:url';
 import { generateLargeJsonl } from './helpers/generate-large-jsonl.mjs';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * Парсит JSONL файл построчно — аналог логики адаптеров.

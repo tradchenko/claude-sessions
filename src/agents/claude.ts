@@ -6,8 +6,6 @@
 import { existsSync, statSync, createReadStream, readdirSync } from 'fs';
 import { createInterface } from 'readline';
 import { join } from 'path';
-
-import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import {
    HOME,
@@ -24,8 +22,9 @@ import {
 } from '../core/config.js';
 import { t } from '../core/i18n/index.js';
 import { safeReadJson } from '../utils/index.js';
-import { BaseAgentAdapter } from './base-adapter.js';
 import { AdapterError } from '../core/errors.js';
+import type { AgentInfo, AgentLoadOptions } from './types.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Event entry from history.jsonl */
 interface HistoryEvent {
@@ -195,9 +194,7 @@ export class ClaudeAdapter extends BaseAgentAdapter {
    readonly name = 'Claude Code';
    readonly icon = '●';
 
-   constructor(fsDeps?: FsDeps) {
-      super(fsDeps);
-   }
+
 
    /**
     * Detects installed Claude Code

@@ -6,13 +6,12 @@
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
-
-import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
-import { BaseAgentAdapter } from './base-adapter.js';
 import { AdapterError } from '../core/errors.js';
+import type { AgentInfo, AgentLoadOptions } from './types.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Gemini CLI home directory */
 const GEMINI_DIR = join(HOME, '.gemini');
@@ -124,9 +123,7 @@ export class GeminiAdapter extends BaseAgentAdapter {
    readonly name = 'Gemini CLI';
    readonly icon = '✦';
 
-   constructor(fsDeps?: FsDeps) {
-      super(fsDeps);
-   }
+
 
    /**
     * Detects installed Gemini CLI

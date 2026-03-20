@@ -345,7 +345,9 @@ async function launchAgentWithContext(
    const prompt = `Read the file ${contextFile} — it contains a restored conversation history from a previous session. Review the context and ask the user how to proceed.`;
 
    try {
-      execFileSync(resumeCmd[0]!, [...resumeCmd.slice(1), prompt], { stdio: 'inherit', cwd });
+      const [cmd, ...cmdArgs] = resumeCmd;
+      if (!cmd) throw new Error('resumeCmd is empty');
+      execFileSync(cmd, [...cmdArgs, prompt], { stdio: 'inherit', cwd });
    } catch (e: unknown) {
       // Код выхода != 0 при штатном завершении — не ошибка
       const isExitError = e instanceof Error && 'status' in e;

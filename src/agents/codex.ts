@@ -8,11 +8,11 @@ import { existsSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
 import { parseJsonlFile } from '../utils/index.js';
-import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
-import { BaseAgentAdapter } from './base-adapter.js';
 import { AdapterError } from '../core/errors.js';
+import { BaseAgentAdapter } from './base-adapter.js';
+import type { AgentInfo, AgentLoadOptions } from './types.js';
 
 /** Entry from Codex CLI history.jsonl */
 interface CodexHistoryEntry {
@@ -178,9 +178,7 @@ export class CodexAdapter extends BaseAgentAdapter {
    readonly name = 'Codex CLI';
    readonly icon = '\u25C6';
 
-   constructor(fsDeps?: FsDeps) {
-      super(fsDeps);
-   }
+
 
    /**
     * Checks if Codex CLI is installed on the system.

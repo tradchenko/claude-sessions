@@ -158,7 +158,7 @@ export default async function summarize(args: string[] = []): Promise<void> {
    const allSessions = await loadSessions({ limit: 500 });
 
    let sessions = targetSession
-      ? allSessions.filter((s) => s.id.startsWith(targetSession!))
+      ? allSessions.filter((s) => targetSession && s.id.startsWith(targetSession))
       : allSessions.filter((s) => needsSummary(s.id, index));
 
    sessions = sessions.slice(0, limit);

@@ -44,6 +44,7 @@ export default async function deleteSession(sessionId: string): Promise<void> {
    if (existsSync(SESSION_INDEX)) {
       try {
          const index = JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as Record<string, unknown>;
+         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
          delete index[sessionId];
          writeFileSync(SESSION_INDEX, JSON.stringify(index, null, 2));
          console.log(`   ✅ ${t('indexCleaned')}`);

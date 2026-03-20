@@ -19,15 +19,11 @@ import {
    SESSION_INDEX,
    MEMORY_DIR,
    MEMORIES_DIR,
-   MEMORY_INDEX,
-   PROJECTS_DIR,
    ensureClaudeDir,
 } from '../core/config.js';
 import { t } from '../core/i18n/index.js';
-import { migrateSessionIndex, generateL0ForExistingSessions } from '../memory/migrate.js';
-import { writeIndex } from '../memory/index.js';
-import { enableMemory } from './enable-memory.js';
 import { runMigrations } from '../migration/runner.js';
+import { enableMemory } from './enable-memory.js';
 
 /** Claude settings structure */
 interface ClaudeSettings {
@@ -281,7 +277,8 @@ async function discoverExistingSessions(): Promise<void> {
             sessionsMap.set(e.sessionId, { ts: e.timestamp, project: e.project || '' });
             if (e.project) projects.add(e.project.split('/').pop() || e.project);
          } else {
-            const existing = sessionsMap.get(e.sessionId)!;
+            const existing = sessionsMap.get(e.sessionId);
+            if (!existing) continue;
             existing.ts = Math.max(existing.ts, e.timestamp);
          }
       } catch {

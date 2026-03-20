@@ -4,11 +4,8 @@
  * Реальный запуск агента не тестируется — только dispatch и error cases.
  */
 
-import { describe, it, before, after } from 'node:test';
+import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
 
 // Импортируем AdapterError из dist для проверки типов ошибок
 let AdapterError;
@@ -18,16 +15,6 @@ before(async () => {
 });
 
 // ─── Утилиты ────────────────────────────────────────────────────────────────
-
-/** Создаёт уникальную temp-директорию */
-function makeTempDir(prefix = 'cs-resume-') {
-   return mkdtempSync(join(tmpdir(), prefix));
-}
-
-/** Удаляет директорию рекурсивно */
-function cleanup(dir) {
-   try { rmSync(dir, { recursive: true, force: true }); } catch { /* игнорируем */ }
-}
 
 // ─── Inline-логика dispatch resume ──────────────────────────────────────────
 
@@ -82,7 +69,7 @@ function makeWorkingAdapter(agentName) {
 function makeNotInstalledAdapter(agentName) {
    return {
       detect: () => null,
-      getResumeCommand: (sessionId) => {
+      getResumeCommand: (_sessionId) => {
          throw new AdapterError({
             code: 'AGENT_NOT_INSTALLED',
             message: `${agentName} не найден в PATH`,
@@ -97,7 +84,7 @@ function makeNotInstalledAdapter(agentName) {
 function makeNoResumeAdapter(agentName) {
    return {
       detect: () => ({ cliBin: '/usr/bin/' + agentName }),
-      getResumeCommand: (sessionId) => {
+      getResumeCommand: (_sessionId) => {
          throw new AdapterError({
             code: 'RESUME_NOT_SUPPORTED',
             message: `${agentName} не поддерживает resume`,

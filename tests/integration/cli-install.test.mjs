@@ -71,21 +71,6 @@ function createOldHooksFixture(claudeDir) {
    writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify(settings, null, 2), 'utf8');
 }
 
-/** Создаёт новый hook format (v1) в claudeDir */
-function createNewHooksFixture(claudeDir) {
-   const settings = {
-      hooks: {
-         Stop: [
-            {
-               matcher: '',
-               hooks: [{ type: 'command', command: 'node /usr/local/bin/cs-stop.js' }],
-            },
-         ],
-      },
-   };
-   writeFileSync(join(claudeDir, 'settings.json'), JSON.stringify(settings, null, 2), 'utf8');
-}
-
 /** Создаёт session-index.json в старом формате (v0) */
 function createOldSessionIndex(claudeDir, sessions) {
    const index = {

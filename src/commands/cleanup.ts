@@ -49,6 +49,7 @@ function removeSessionRecords(sessionIds: Set<string>): { historyRemoved: number
       const idx = JSON.parse(readFileSync(idxPath, 'utf8')) as Record<string, unknown>;
       for (const id of sessionIds) {
          if (id in idx) {
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete idx[id];
             indexRemoved++;
          }

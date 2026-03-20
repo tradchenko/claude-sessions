@@ -7,8 +7,9 @@
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
 
-let ClaudeAdapter, CodexAdapter, AdapterError, defaultFsDeps;
-let BaseAgentAdapterClass;
+let ClaudeAdapter, CodexAdapter, AdapterError;
+let _defaultFsDeps; // eslint-disable-line no-unused-vars
+let _BaseAgentAdapterClass; // eslint-disable-line no-unused-vars
 
 before(async () => {
    const claudeMod = await import('../dist/agents/claude.js');
@@ -24,10 +25,10 @@ before(async () => {
    // В текущей архитектуре — из dist/agents/errors.js
    try {
       const agentErrMod = await import('../dist/agents/errors.js');
-      defaultFsDeps = agentErrMod.defaultFsDeps;
+      _defaultFsDeps = agentErrMod.defaultFsDeps;
    } catch {
       // Если модуль недоступен — оставляем undefined
-      defaultFsDeps = null;
+      _defaultFsDeps = null;
    }
 });
 

@@ -529,6 +529,7 @@ export default async function picker(args: string[] = []): Promise<void> {
               string,
               unknown
             >;
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
             delete idx[s.id];
             writeFileSync(idxPath, JSON.stringify(idx, null, 2));
           }

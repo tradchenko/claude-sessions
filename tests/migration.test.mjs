@@ -206,7 +206,6 @@ describe('migration: runMigrations v0 → v1', () => {
 
       try {
          await runMigrations({ claudeDir, dataDir: dataDir2, silent: true });
-         const backupsDir = join(dataDir2, 'backups');
          // Backup может не существовать если файл уже был мигрирован — это нормально
          // Проверяем что meta.json создан — признак успешной миграции
          assert.ok(existsSync(join(dataDir2, 'meta.json')), 'meta.json должен быть создан');

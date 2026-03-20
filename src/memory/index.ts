@@ -108,6 +108,7 @@ export function enforceMemoryLimit(index: MemoryIndex): MemoryIndex {
    const pruned: MemoryIndex = { ...index, memories: { ...index.memories } };
    for (let i = 0; i < toRemove; i++) {
       const key = sorted[i];
+      // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
       if (key) delete pruned.memories[key];
    }
    return pruned;
