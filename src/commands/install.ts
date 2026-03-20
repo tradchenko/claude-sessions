@@ -158,7 +158,7 @@ function installScripts(): void {
  * Migrate hooks to correct format {matcher, hooks: [{type, command}]}
  * and update legacy paths to dist/
  */
-function migrateHooks(settings: ClaudeSettings): boolean {
+export function migrateHooks(settings: ClaudeSettings): boolean {
    let changed = false;
 
    // Map old scripts to new paths
