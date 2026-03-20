@@ -10,7 +10,7 @@
 ### Phase 1: Аудит и тест-инфраструктура
 **Goal:** Зафиксировать текущее поведение и создать тест-инфраструктуру до любых изменений кода.
 **Requirements:** TEST-07, TEST-02, TEST-06, CODE-02, SESS-15, DATA-01, DATA-02, DATA-03, DATA-04, DATA-05, DATA-06, DATA-07
-**Status:** In Progress (60%)
+**Status:** Completed (100%)
 
 | Plan | Title | Status |
 |------|-------|--------|
@@ -34,13 +34,11 @@
 
 | Plan | Title | Status |
 |------|-------|--------|
-| 02-01 | BaseAgentAdapter и рефакторинг ClaudeAdapter/CodexAdapter | ✅ Completed |
+| 02-01 | Фундамент: DI, BaseAgentAdapter, AdapterError — все 5 адаптеров | ✅ Completed |
 | 02-02 | Система структурированных ошибок и exit codes | ✅ Completed |
 | 02-03 | Сессионные адаптеры: resume/restore через AdapterError | Not Started |
-| 02-04 | GeminiAdapter и QwenAdapter | Not Started |
-| 02-05 | CompanionAdapter | Not Started |
-| 02-06 | Дедупликация сессий в list | Not Started |
-| 02-07 | TUI picker стабилизация | Not Started |
+| 02-04 | Дедупликация сессий в list | Not Started |
+| 02-05 | TUI picker стабилизация | Not Started |
 
 **Success Criteria:**
 1. `claude-sessions resume <id>` запускает сессию для каждого из 5 агентов; при отсутствии сессии — понятная ошибка без stack trace

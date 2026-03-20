@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-20T13:39:07.087Z"
+last_updated: "2026-03-20T18:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
+  total_plans: 4
+  completed_plans: 4
 ---
 
 # Project State
@@ -16,34 +16,32 @@ progress:
 ## Project Reference
 See: .planning/PROJECT.md (updated 2026-03-20)
 **Core value:** Каждая команда из README работает надёжно и предсказуемо для всех агентов
-**Current focus:** Phase 1
+**Current focus:** Phase 2
 
 ## Current Phase
-Phase 1: Аудит и тест-инфраструктура
+Phase 2: Стабилизация ядра (адаптеры и сессии)
 Status: In Progress
 
 ## Phase Status
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
-| 1 | Аудит и тест-инфраструктура | In Progress | 60% |
-| 2 | Стабилизация ядра (адаптеры и сессии) | Not Started | 0% |
+| 1 | Аудит и тест-инфраструктура | Completed | 100% |
+| 2 | Стабилизация ядра (адаптеры и сессии) | In Progress | 33% |
 | 3 | Подсистема памяти | Not Started | 0% |
 | 4 | Миграция и финальная интеграция | Not Started | 0% |
 
-## Plan Progress (Phase 1)
+## Plan Progress (Phase 2)
 | Plan | Title | Status |
 |------|-------|--------|
-| 01-01 | Аудит тест-инфраструктуры | Completed |
-| 01-02 | Fixture-файлы и тесты JSONL edge cases | Completed |
-| 01-03 | Session identity тесты и fixture-based матрица | Completed |
-| 01-04 | — | Not Started |
-| 01-05 | — | Not Started |
+| 02-01 | Фундамент: DI, BaseAgentAdapter, AdapterError | Completed |
+| 02-02 | — | Not Started |
+| 02-03 | — | Not Started |
 
 ## Last Completed
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
 - Plan 01-02 завершён 2026-03-20: 19 тестов (DATA-01..07 покрыты), npm test зелёный
 - Plan 01-03 завершён 2026-03-20: session identity тесты (25), fixture матрица (24), 68 тестов total
-- Plan 02-02 завершён 2026-03-20: система ошибок (errors.ts, i18n 11 lang, CLI --debug + try/catch)
+- Plan 02-01 завершён 2026-03-20: 5 адаптеров как классы с DI (FsDeps), BaseAgentAdapter, AdapterError, 88 тестов зелёные
 
 ## Active Tasks
 _Нет активных задач_
