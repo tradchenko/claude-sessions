@@ -8,9 +8,10 @@ import { join } from 'path';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
 import { parseJsonlFile, safeReadJson } from '../utils/index.js';
-import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
+import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Qwen Code home directory */
 const QWEN_HOME = join(HOME, '.qwen');
@@ -102,10 +103,17 @@ function hasQwenHooks(): boolean {
    return hooksStr.includes('session-start.js') || hooksStr.includes('session-start-hook');
 }
 
-export const qwenAdapter: AgentAdapter = {
-   id: 'qwen',
-   name: 'Qwen Code',
-   icon: '◇',
+/**
+ * Адаптер Qwen Code — класс с DI файловой системы
+ */
+export class QwenAdapter extends BaseAgentAdapter {
+   readonly id = 'qwen' as const;
+   readonly name = 'Qwen Code';
+   readonly icon = '◇';
+
+   constructor(fsDeps?: FsDeps) {
+      super(fsDeps);
+   }
 
    detect(): AgentInfo | null {
       if (!existsSync(QWEN_HOME)) return null;
@@ -120,7 +128,7 @@ export const qwenAdapter: AgentAdapter = {
          hooksSupport: hasQwenHooks(),
          resumeSupport: true,
       };
-   },
+   }
 
    async loadSessions(options?: AgentLoadOptions): Promise<Session[]> {
       if (!existsSync(QWEN_PROJECTS)) return [];
@@ -198,13 +206,13 @@ export const qwenAdapter: AgentAdapter = {
       // Sort by date (newest first) and limit
       sessions.sort((a, b) => b.lastTs - a.lastTs);
       return sessions.slice(0, limit);
-   },
+   }
 
    getResumeCommand(sessionId: string): string[] | null {
       const cli = findQwenCli();
       if (!cli) return null;
       return [cli, '--resume', sessionId];
-   },
+   }
 
    isSessionAlive(sessionId: string): boolean {
       // Qwen stores chats in ~/.qwen/projects/{project}/chats/{sessionId}.jsonl
@@ -217,12 +225,15 @@ export const qwenAdapter: AgentAdapter = {
          }
       } catch { /* */ }
       return false;
-   },
+   }
 
    getInstructionsPath(): string | null {
       // Check global QWEN.md
       const globalPath = join(QWEN_HOME, 'QWEN.md');
       if (existsSync(globalPath)) return globalPath;
       return null;
-   },
-};
+   }
+}
+
+/** Singleton для обратной совместимости */
+export const qwenAdapter = new QwenAdapter();

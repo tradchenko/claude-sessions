@@ -7,10 +7,11 @@ import { existsSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 
-import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
+import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
+import { BaseAgentAdapter } from './base-adapter.js';
 
 /** Gemini CLI home directory */
 const GEMINI_DIR = join(HOME, '.gemini');
@@ -114,12 +115,17 @@ function scanProjects(): Array<{ name: string; path: string; lastTs: number; com
 }
 
 /**
- * Gemini CLI adapter
+ * Адаптер Gemini CLI — класс с DI файловой системы.
+ * Gemini id — project directory name (не UUID).
  */
-export const geminiAdapter: AgentAdapter = {
-   id: 'gemini',
-   name: 'Gemini CLI',
-   icon: '✦',
+export class GeminiAdapter extends BaseAgentAdapter {
+   readonly id = 'gemini' as const;
+   readonly name = 'Gemini CLI';
+   readonly icon = '✦';
+
+   constructor(fsDeps?: FsDeps) {
+      super(fsDeps);
+   }
 
    /**
     * Detects installed Gemini CLI
@@ -138,7 +144,7 @@ export const geminiAdapter: AgentAdapter = {
          hooksSupport: true,
          resumeSupport: false,
       };
-   },
+   }
 
    /**
     * Loads Gemini sessions — one per project from git history
@@ -185,18 +191,16 @@ export const geminiAdapter: AgentAdapter = {
             agent: 'gemini',
          };
       });
-   },
+   }
 
    /**
     * Resume is not supported for Gemini CLI
     */
    getResumeCommand(_sessionId: string): string[] | null {
       return null;
-   },
+   }
 
-   isSessionAlive(_sessionId: string): boolean {
-      return false; // Gemini has no resume support
-   },
+   // isSessionAlive: базовая реализация (false) подходит, Gemini не поддерживает resume
 
    /**
     * Path to GEMINI.md for memory injection
@@ -205,5 +209,8 @@ export const geminiAdapter: AgentAdapter = {
       const globalPath = join(GEMINI_DIR, INSTRUCTIONS_FILENAME);
       if (existsSync(globalPath)) return globalPath;
       return null;
-   },
-};
+   }
+}
+
+/** Singleton для обратной совместимости */
+export const geminiAdapter = new GeminiAdapter();
