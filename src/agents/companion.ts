@@ -16,9 +16,15 @@ import type { Session } from '../sessions/loader.js';
 import { HOME, formatDate, shortProjectName, SNAPSHOTS_DIR } from '../core/config.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { safeReadJson } from '../utils/index.js';
+import { AdapterError } from '../core/errors.js';
+import { ClaudeAdapter } from './claude.js';
+import { CodexAdapter } from './codex.js';
+import { QwenAdapter } from './qwen.js';
+import { GeminiAdapter } from './gemini.js';
 
 /** Companion home directory */
 const COMPANION_DIR = join(HOME, '.companion');
+
 
 /** Recordings directory */
 const RECORDINGS_DIR = join(COMPANION_DIR, 'recordings');
@@ -265,8 +271,36 @@ export class CompanionAdapter implements AgentAdapter {
       return result.slice(0, limit);
    }
 
-   getResumeCommand(_sessionId: string): string[] | null {
-      return null;
+   /**
+    * Делегирует getResumeCommand реальному адаптеру.
+    * Companion сам не является агентом, поэтому проксирует вызов.
+    * Порядок приоритета: Claude → Codex → Qwen → Gemini.
+    * Если ни один агент не установлен → AGENT_NOT_INSTALLED.
+    * Если реальный адаптер не поддерживает resume → пробрасываем его AdapterError.
+    */
+   getResumeCommand(sessionId: string): string[] | null {
+      // Прямые импорты конкретных адаптеров (нет circular: claude/codex/qwen/gemini не импортируют companion)
+      const candidates: AgentAdapter[] = [
+         new ClaudeAdapter(),
+         new CodexAdapter(),
+         new QwenAdapter(),
+         new GeminiAdapter(),
+      ];
+
+      for (const adapter of candidates) {
+         if (adapter.detect()) {
+            // Делегируем первому установленному агенту
+            process.stderr.write(`[companion] resume delegated to ${adapter.id}\n`);
+            return adapter.getResumeCommand(sessionId);
+         }
+      }
+
+      throw new AdapterError({
+         code: 'AGENT_NOT_INSTALLED',
+         message: 'No real agent found to delegate Companion resume',
+         agentName: 'companion',
+         suggestion: 'Установите Claude, Codex, Qwen или Gemini',
+      });
    }
 
    isSessionAlive(_sessionId: string): boolean {
