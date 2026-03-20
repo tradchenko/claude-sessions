@@ -37,7 +37,7 @@
 | 02-01 | Фундамент: DI, BaseAgentAdapter, AdapterError — все 5 адаптеров | ✅ Completed |
 | 02-02 | Система структурированных ошибок и exit codes | ✅ Completed |
 | 02-03 | Сессионные адаптеры: resume/restore через AdapterError | Not Started |
-| 02-04 | Дедупликация сессий в list | Not Started |
+| 02-04 | Дедупликация сессий в list | ✅ Completed |
 | 02-05 | TUI picker стабилизация | Not Started |
 
 **Success Criteria:**
