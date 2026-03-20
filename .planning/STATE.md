@@ -27,6 +27,7 @@ Status: In Progress
 | 01-05 | — | Not Started |
 
 ## Last Completed
+- Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
 - Plan 01-02 завершён 2026-03-20: 19 тестов (DATA-01..07 покрыты), npm test зелёный
 
 ## Active Tasks

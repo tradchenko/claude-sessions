@@ -19,7 +19,7 @@
 
 **Success Criteria:**
 1. `npm test` запускается и выводит результаты без ошибок конфигурации ✅ (19 тестов, 0 падений)
-2. TypeScript компилируется с `strict` + `noUncheckedIndexedAccess` — все найденные ошибки залогированы как issues
+2. TypeScript компилируется с `strict` + `noUncheckedIndexedAccess` ✅ (исправлены все ошибки, ESLint настроен)
 3. Fixture-файлы для JSONL edge cases существуют (truncated, BOM, null fields, 10MB+) ✅
 4. Session identity для каждого агента задокументирована в виде проходящих тестов
 5. Пользователь может запустить `claude-sessions list` и получить список без крэша даже при повреждённых данных
