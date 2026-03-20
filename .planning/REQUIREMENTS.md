@@ -65,7 +65,7 @@
 - [ ] **TEST-01**: Unit тесты на каждый агент-адаптер (Claude, Codex, Qwen, Gemini, Companion)
 - [ ] **TEST-02**: Unit тесты на JSONL парсер с edge case фикстурами
 - [ ] **TEST-03**: Unit тесты на подсистему памяти (extraction, scoring, dedup)
-- [ ] **TEST-04**: Unit тесты на миграцию (старый формат → новый)
+- [x] **TEST-04**: Unit тесты на миграцию (старый формат → новый)
 - [ ] **TEST-05**: Integration тесты на CLI-команды (list, resume, restore, install, extract-memory)
 - [ ] **TEST-06**: Fixture-based тесты: матрица [agent] × [command] × [edge case]
 - [ ] **TEST-07**: TypeScript strict mode + noUncheckedIndexedAccess включены
@@ -152,7 +152,7 @@
 | TEST-01 | 2 | Pending |
 | TEST-02 | 1 | Pending |
 | TEST-03 | 3 | Pending |
-| TEST-04 | 4 | Pending |
+| TEST-04 | 4 | Complete |
 | TEST-05 | 4 | Pending |
 | TEST-06 | 1 | Pending |
 | TEST-07 | 1 | Pending |
