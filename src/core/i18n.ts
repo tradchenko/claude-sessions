@@ -183,6 +183,19 @@ type TranslationDict = {
    readonly pickerLoadingAgents: string;
    readonly summarizeLlmNotFound: string;
    readonly summarizeIdMismatch: (n: number) => string;
+   // Метки структурированных ошибок
+   readonly errorWhat: string;
+   readonly errorCause: string;
+   readonly errorFix: string;
+   // Сообщения об ошибках адаптеров
+   readonly errSessionNotFound: (id: string) => string;
+   readonly errAgentNotInstalled: (agent: string) => string;
+   readonly errCorruptData: string;
+   readonly errResumeNotSupported: (agent: string) => string;
+   readonly errSuggestionCheckId: string;
+   readonly errSuggestionInstallAgent: (agent: string) => string;
+   readonly errSuggestionRestore: string;
+   readonly noSessionsHint: string;
 };
 
 /** Все допустимые ключи переводов */
@@ -359,6 +372,19 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Loading all agents...',
       summarizeLlmNotFound: 'No LLM CLI found (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} IDs from LLM response did not match real sessions`,
+      // Метки структурированных ошибок
+      errorWhat: 'Error',
+      errorCause: 'Cause',
+      errorFix: 'Fix',
+      // Сообщения об ошибках адаптеров
+      errSessionNotFound: (id) => `Session ${id} not found`,
+      errAgentNotInstalled: (agent) => `Agent ${agent} is not installed`,
+      errCorruptData: 'Session data is corrupted',
+      errResumeNotSupported: (agent) => `Agent ${agent} does not support resume`,
+      errSuggestionCheckId: 'Check session ID and try again',
+      errSuggestionInstallAgent: (agent) => `Install ${agent} or use another agent`,
+      errSuggestionRestore: "Use 'restore' command instead",
+      noSessionsHint: 'Start a session with claude/codex/qwen/gemini first',
    },
    ru: {
       today: 'сегодня',
@@ -529,6 +555,19 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Загрузка всех агентов...',
       summarizeLlmNotFound: 'LLM CLI не найден (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} ID из ответа LLM не совпали с реальными`,
+      // Метки структурированных ошибок
+      errorWhat: 'Ошибка',
+      errorCause: 'Причина',
+      errorFix: 'Решение',
+      // Сообщения об ошибках адаптеров
+      errSessionNotFound: (id) => `Сессия ${id} не найдена`,
+      errAgentNotInstalled: (agent) => `Агент ${agent} не установлен`,
+      errCorruptData: 'Данные сессии повреждены',
+      errResumeNotSupported: (agent) => `Агент ${agent} не поддерживает resume`,
+      errSuggestionCheckId: 'Проверьте ID сессии и попробуйте снова',
+      errSuggestionInstallAgent: (agent) => `Установите ${agent} или используйте другой агент`,
+      errSuggestionRestore: "Используйте команду 'restore' вместо этого",
+      noSessionsHint: 'Начните сессию с claude/codex/qwen/gemini',
    },
    es: {
       today: 'hoy',
@@ -699,6 +738,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Cargando todos los agentes...',
       summarizeLlmNotFound: 'No se encontró CLI de LLM (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} IDs de la respuesta LLM no coincidieron con sesiones reales`,
+      errorWhat: 'Error',
+      errorCause: 'Causa',
+      errorFix: 'Solución',
+      errSessionNotFound: (id) => `Sesión ${id} no encontrada`,
+      errAgentNotInstalled: (agent) => `El agente ${agent} no está instalado`,
+      errCorruptData: 'Los datos de la sesión están corruptos',
+      errResumeNotSupported: (agent) => `El agente ${agent} no admite la reanudación`,
+      errSuggestionCheckId: 'Verifique el ID de sesión e intente de nuevo',
+      errSuggestionInstallAgent: (agent) => `Instale ${agent} o use otro agente`,
+      errSuggestionRestore: "Use el comando 'restore' en su lugar",
+      noSessionsHint: 'Inicie una sesión con claude/codex/qwen/gemini primero',
    },
    fr: {
       today: "aujourd'hui",
@@ -869,6 +919,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Chargement de tous les agents...',
       summarizeLlmNotFound: 'Aucun CLI LLM trouvé (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} IDs de la réponse LLM ne correspondent pas aux sessions réelles`,
+      errorWhat: 'Erreur',
+      errorCause: 'Cause',
+      errorFix: 'Solution',
+      errSessionNotFound: (id) => `Session ${id} introuvable`,
+      errAgentNotInstalled: (agent) => `L'agent ${agent} n'est pas installé`,
+      errCorruptData: 'Les données de session sont corrompues',
+      errResumeNotSupported: (agent) => `L'agent ${agent} ne prend pas en charge la reprise`,
+      errSuggestionCheckId: "Vérifiez l'ID de session et réessayez",
+      errSuggestionInstallAgent: (agent) => `Installez ${agent} ou utilisez un autre agent`,
+      errSuggestionRestore: "Utilisez la commande 'restore' à la place",
+      noSessionsHint: 'Démarrez une session avec claude/codex/qwen/gemini en premier',
    },
    de: {
       today: 'heute',
@@ -1039,6 +1100,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Alle Agenten werden geladen...',
       summarizeLlmNotFound: 'Kein LLM-CLI gefunden (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} IDs aus der LLM-Antwort stimmten nicht mit realen Sitzungen überein`,
+      errorWhat: 'Fehler',
+      errorCause: 'Ursache',
+      errorFix: 'Lösung',
+      errSessionNotFound: (id) => `Sitzung ${id} nicht gefunden`,
+      errAgentNotInstalled: (agent) => `Agent ${agent} ist nicht installiert`,
+      errCorruptData: 'Sitzungsdaten sind beschädigt',
+      errResumeNotSupported: (agent) => `Agent ${agent} unterstützt die Fortsetzung nicht`,
+      errSuggestionCheckId: 'Überprüfen Sie die Sitzungs-ID und versuchen Sie es erneut',
+      errSuggestionInstallAgent: (agent) => `Installieren Sie ${agent} oder verwenden Sie einen anderen Agent`,
+      errSuggestionRestore: "Verwenden Sie stattdessen den Befehl 'restore'",
+      noSessionsHint: 'Starten Sie zuerst eine Sitzung mit claude/codex/qwen/gemini',
    },
    zh: {
       today: '今天',
@@ -1209,6 +1281,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: '正在加载所有代理...',
       summarizeLlmNotFound: '未找到 LLM CLI（claude、codex、qwen、gemini）',
       summarizeIdMismatch: (n) => `${n} 个来自 LLM 响应的 ID 与实际会话不匹配`,
+      errorWhat: '错误',
+      errorCause: '原因',
+      errorFix: '解决方案',
+      errSessionNotFound: (id) => `未找到会话 ${id}`,
+      errAgentNotInstalled: (agent) => `代理 ${agent} 未安装`,
+      errCorruptData: '会话数据已损坏',
+      errResumeNotSupported: (agent) => `代理 ${agent} 不支持恢复`,
+      errSuggestionCheckId: '请检查会话 ID 并重试',
+      errSuggestionInstallAgent: (agent) => `安装 ${agent} 或使用其他代理`,
+      errSuggestionRestore: "请改用 'restore' 命令",
+      noSessionsHint: '请先使用 claude/codex/qwen/gemini 开始会话',
    },
    'zh-tw': {
       today: '今天',
@@ -1379,6 +1462,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: '正在載入所有代理...',
       summarizeLlmNotFound: '未找到 LLM CLI（claude、codex、qwen、gemini）',
       summarizeIdMismatch: (n) => `${n} 個來自 LLM 回應的 ID 與實際工作階段不匹配`,
+      errorWhat: '錯誤',
+      errorCause: '原因',
+      errorFix: '解決方案',
+      errSessionNotFound: (id) => `找不到工作階段 ${id}`,
+      errAgentNotInstalled: (agent) => `代理 ${agent} 未安裝`,
+      errCorruptData: '工作階段資料已損毀',
+      errResumeNotSupported: (agent) => `代理 ${agent} 不支援繼續`,
+      errSuggestionCheckId: '請檢查工作階段 ID 並重試',
+      errSuggestionInstallAgent: (agent) => `安裝 ${agent} 或使用其他代理`,
+      errSuggestionRestore: "請改用 'restore' 命令",
+      noSessionsHint: '請先使用 claude/codex/qwen/gemini 開始工作階段',
    },
    ja: {
       today: '今日',
@@ -1549,6 +1643,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'すべてのエージェントを読み込み中...',
       summarizeLlmNotFound: 'LLM CLI が見つかりません（claude、codex、qwen、gemini）',
       summarizeIdMismatch: (n) => `LLM応答の ${n} 個のIDが実際のセッションと一致しませんでした`,
+      errorWhat: 'エラー',
+      errorCause: '原因',
+      errorFix: '解決策',
+      errSessionNotFound: (id) => `セッション ${id} が見つかりません`,
+      errAgentNotInstalled: (agent) => `エージェント ${agent} はインストールされていません`,
+      errCorruptData: 'セッションデータが破損しています',
+      errResumeNotSupported: (agent) => `エージェント ${agent} は再開をサポートしていません`,
+      errSuggestionCheckId: 'セッションIDを確認して再試行してください',
+      errSuggestionInstallAgent: (agent) => `${agent} をインストールするか、別のエージェントを使用してください`,
+      errSuggestionRestore: "'restore' コマンドを代わりに使用してください",
+      noSessionsHint: 'まず claude/codex/qwen/gemini でセッションを開始してください',
    },
    ko: {
       today: '오늘',
@@ -1719,6 +1824,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: '모든 에이전트 로딩 중...',
       summarizeLlmNotFound: 'LLM CLI를 찾을 수 없습니다 (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `LLM 응답의 ${n}개 ID가 실제 세션과 일치하지 않습니다`,
+      errorWhat: '오류',
+      errorCause: '원인',
+      errorFix: '해결책',
+      errSessionNotFound: (id) => `세션 ${id}을(를) 찾을 수 없습니다`,
+      errAgentNotInstalled: (agent) => `에이전트 ${agent}이(가) 설치되지 않았습니다`,
+      errCorruptData: '세션 데이터가 손상되었습니다',
+      errResumeNotSupported: (agent) => `에이전트 ${agent}은(는) 재개를 지원하지 않습니다`,
+      errSuggestionCheckId: '세션 ID를 확인하고 다시 시도하세요',
+      errSuggestionInstallAgent: (agent) => `${agent}을(를) 설치하거나 다른 에이전트를 사용하세요`,
+      errSuggestionRestore: "'restore' 명령을 대신 사용하세요",
+      noSessionsHint: '먼저 claude/codex/qwen/gemini로 세션을 시작하세요',
    },
    pt: {
       today: 'hoje',
@@ -1889,6 +2005,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Carregando todos os agentes...',
       summarizeLlmNotFound: 'Nenhum CLI de LLM encontrado (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `${n} IDs da resposta LLM não corresponderam a sessões reais`,
+      errorWhat: 'Erro',
+      errorCause: 'Causa',
+      errorFix: 'Solução',
+      errSessionNotFound: (id) => `Sessão ${id} não encontrada`,
+      errAgentNotInstalled: (agent) => `Agente ${agent} não está instalado`,
+      errCorruptData: 'Os dados da sessão estão corrompidos',
+      errResumeNotSupported: (agent) => `Agente ${agent} não suporta retomada`,
+      errSuggestionCheckId: 'Verifique o ID da sessão e tente novamente',
+      errSuggestionInstallAgent: (agent) => `Instale ${agent} ou use outro agente`,
+      errSuggestionRestore: "Use o comando 'restore' em vez disso",
+      noSessionsHint: 'Inicie uma sessão com claude/codex/qwen/gemini primeiro',
    },
    tr: {
       today: 'bugün',
@@ -2059,6 +2186,17 @@ const translations: Record<SupportedLang, TranslationDict> = {
       pickerLoadingAgents: 'Tüm ajanlar yükleniyor...',
       summarizeLlmNotFound: 'LLM CLI bulunamadı (claude, codex, qwen, gemini)',
       summarizeIdMismatch: (n) => `LLM yanıtından ${n} ID gerçek oturumlarla eşleşmedi`,
+      errorWhat: 'Hata',
+      errorCause: 'Neden',
+      errorFix: 'Çözüm',
+      errSessionNotFound: (id) => `Oturum ${id} bulunamadı`,
+      errAgentNotInstalled: (agent) => `${agent} ajanı yüklü değil`,
+      errCorruptData: 'Oturum verileri bozulmuş',
+      errResumeNotSupported: (agent) => `${agent} ajanı devam ettirmeyi desteklemiyor`,
+      errSuggestionCheckId: 'Oturum ID\'sini kontrol edin ve tekrar deneyin',
+      errSuggestionInstallAgent: (agent) => `${agent} yükleyin veya başka bir ajan kullanın`,
+      errSuggestionRestore: "'restore' komutunu kullanın",
+      noSessionsHint: 'Önce claude/codex/qwen/gemini ile bir oturum başlatın',
    },
 };
 
