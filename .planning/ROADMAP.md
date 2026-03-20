@@ -60,8 +60,7 @@
 |------|-------|--------|
 | 03-01 | i18n рефакторинг: разбивка монолита на модули | ✅ Completed |
 | 03-02 | L0 extraction, hotness, dedup и целостность индекса | ✅ Completed |
-| 03-03 | L1 extraction pipeline | ⬜ Not Started |
-| 03-04 | Memory store и hotness pruning | ⬜ Not Started |
+| 03-03 | 3/5 | In Progress|  | 03-04 | Memory store и hotness pruning | ⬜ Not Started |
 | 03-05 | Тесты подсистемы памяти | ⬜ Not Started |
 
 **Success Criteria:**
