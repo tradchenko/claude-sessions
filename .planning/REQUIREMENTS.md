@@ -109,64 +109,64 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | — | Pending |
-| SESS-02 | — | Pending |
-| SESS-03 | — | Pending |
-| SESS-04 | — | Pending |
-| SESS-05 | — | Pending |
-| SESS-06 | — | Pending |
-| SESS-07 | — | Pending |
-| SESS-08 | — | Pending |
-| SESS-09 | — | Pending |
-| SESS-10 | — | Pending |
-| SESS-11 | — | Pending |
-| SESS-12 | — | Pending |
-| SESS-13 | — | Pending |
-| SESS-14 | — | Pending |
-| SESS-15 | — | Pending |
-| DATA-01 | — | Pending |
-| DATA-02 | — | Pending |
-| DATA-03 | — | Pending |
-| DATA-04 | — | Pending |
-| DATA-05 | — | Pending |
-| DATA-06 | — | Pending |
-| DATA-07 | — | Pending |
-| MEM-01 | — | Pending |
-| MEM-02 | — | Pending |
-| MEM-03 | — | Pending |
-| MEM-04 | — | Pending |
-| MEM-05 | — | Pending |
-| MEM-06 | — | Pending |
-| MEM-07 | — | Pending |
-| MIG-01 | — | Pending |
-| MIG-02 | — | Pending |
-| MIG-03 | — | Pending |
-| MIG-04 | — | Pending |
-| MIG-05 | — | Pending |
-| MIG-06 | — | Pending |
-| MIG-07 | — | Pending |
-| ERR-01 | — | Pending |
-| ERR-02 | — | Pending |
-| ERR-03 | — | Pending |
-| ERR-04 | — | Pending |
-| TEST-01 | — | Pending |
-| TEST-02 | — | Pending |
-| TEST-03 | — | Pending |
-| TEST-04 | — | Pending |
-| TEST-05 | — | Pending |
-| TEST-06 | — | Pending |
-| TEST-07 | — | Pending |
-| TEST-08 | — | Pending |
-| CODE-01 | — | Pending |
-| CODE-02 | — | Pending |
-| CODE-03 | — | Pending |
-| CODE-04 | — | Pending |
-| CODE-05 | — | Pending |
+| SESS-01 | 2 | Pending |
+| SESS-02 | 2 | Pending |
+| SESS-03 | 2 | Pending |
+| SESS-04 | 2 | Pending |
+| SESS-05 | 2 | Pending |
+| SESS-06 | 2 | Pending |
+| SESS-07 | 2 | Pending |
+| SESS-08 | 2 | Pending |
+| SESS-09 | 2 | Pending |
+| SESS-10 | 2 | Pending |
+| SESS-11 | 2 | Pending |
+| SESS-12 | 2 | Pending |
+| SESS-13 | 2 | Pending |
+| SESS-14 | 2 | Pending |
+| SESS-15 | 1 | Pending |
+| DATA-01 | 1 | Pending |
+| DATA-02 | 1 | Pending |
+| DATA-03 | 1 | Pending |
+| DATA-04 | 1 | Pending |
+| DATA-05 | 1 | Pending |
+| DATA-06 | 1 | Pending |
+| DATA-07 | 1 | Pending |
+| MEM-01 | 3 | Pending |
+| MEM-02 | 3 | Pending |
+| MEM-03 | 3 | Pending |
+| MEM-04 | 3 | Pending |
+| MEM-05 | 3 | Pending |
+| MEM-06 | 3 | Pending |
+| MEM-07 | 3 | Pending |
+| MIG-01 | 4 | Pending |
+| MIG-02 | 4 | Pending |
+| MIG-03 | 4 | Pending |
+| MIG-04 | 4 | Pending |
+| MIG-05 | 4 | Pending |
+| MIG-06 | 4 | Pending |
+| MIG-07 | 4 | Pending |
+| ERR-01 | 2 | Pending |
+| ERR-02 | 2 | Pending |
+| ERR-03 | 2 | Pending |
+| ERR-04 | 2 | Pending |
+| TEST-01 | 2 | Pending |
+| TEST-02 | 1 | Pending |
+| TEST-03 | 3 | Pending |
+| TEST-04 | 4 | Pending |
+| TEST-05 | 4 | Pending |
+| TEST-06 | 1 | Pending |
+| TEST-07 | 1 | Pending |
+| TEST-08 | 3 | Pending |
+| CODE-01 | 2 | Pending |
+| CODE-02 | 1 | Pending |
+| CODE-03 | 2 | Pending |
+| CODE-04 | 2 | Pending |
+| CODE-05 | 3 | Pending |
 
 **Coverage:**
 - v1 requirements: 48 total
-- Mapped to phases: 0
-- Unmapped: 48 ⚠️
+- Mapped to phases: 48 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-20*
