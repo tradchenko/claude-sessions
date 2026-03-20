@@ -524,8 +524,8 @@ export default async function picker(args: string[] = []): Promise<void> {
             const msg = e instanceof Error ? e.message : String(e);
             console.error(`\n❌ ${t("pickerResumeError", msg)}\n`);
           }
-        } else if (s.agent === "claude") {
-          // Мёртвая Claude-сессия — восстанавливаем из JSONL
+        } else {
+          // Сессия мёртвая или агент не поддерживает resume — restore из JSONL/snapshot
           console.log(`\n${t("sessionNotFound")}\n`);
           const restorePath = join(__dirname, "restore.js");
           if (!existsSync(restorePath)) {
@@ -538,22 +538,6 @@ export default async function picker(args: string[] = []): Promise<void> {
               console.error(`\n❌ ${t("pickerRestoreError", msg)}\n`);
             }
           }
-        } else if (resumeCmd && resumeCmd.length > 0) {
-          // Другой агент — пробуем возобновить
-          const [cmd, ...cmdArgs] = resumeCmd;
-          console.log(`\n▶ ${resumeCmd.join(" ")}\n`);
-          try {
-            execFileSync(cmd, cmdArgs, { stdio: "inherit" });
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            console.error(
-              `\n❌ ${t("pickerResumeAgentError", s.agent, msg)}\n`,
-            );
-          }
-        } else {
-          console.log(
-            `\n${t("pickerResumeNotAvailable", s.agent, s.id)}\n`,
-          );
         }
         process.exit(0);
       });

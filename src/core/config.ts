@@ -193,6 +193,52 @@ export function findSessionJsonl(sessionId: string): FoundSessionFile | null {
       if (existsSync(fallbackPath)) return { path: fallbackPath, projectDir: 'sessions' };
    }
 
+   // Codex: ~/.codex/sessions/YYYY/MM/DD/*-{sessionId}.jsonl
+   const codexSessions = join(HOME, '.codex', 'sessions');
+   if (existsSync(codexSessions)) {
+      try {
+         const searchCodex = (dir: string): FoundSessionFile | null => {
+            for (const entry of readdirSync(dir, { withFileTypes: true })) {
+               const full = join(dir, entry.name);
+               if (entry.isDirectory()) {
+                  const found = searchCodex(full);
+                  if (found) return found;
+               } else if (entry.name.includes(sessionId) && entry.name.endsWith('.jsonl')) {
+                  return { path: full, projectDir: 'codex' };
+               }
+            }
+            return null;
+         };
+         const codexFound = searchCodex(codexSessions);
+         if (codexFound) return codexFound;
+      } catch { /* */ }
+   }
+
+   // Qwen: ~/.qwen/projects/*/chats/{sessionId}.jsonl
+   const qwenProjects = join(HOME, '.qwen', 'projects');
+   if (existsSync(qwenProjects)) {
+      try {
+         for (const proj of readdirSync(qwenProjects)) {
+            const chatsDir = join(qwenProjects, proj, 'chats');
+            if (!existsSync(chatsDir)) continue;
+            const qwenFile = join(chatsDir, fileName);
+            if (existsSync(qwenFile)) return { path: qwenFile, projectDir: proj };
+         }
+      } catch { /* */ }
+   }
+
+   // Companion: ~/.companion/recordings/*{sessionId}*.jsonl
+   const companionRec = join(HOME, '.companion', 'recordings');
+   if (existsSync(companionRec)) {
+      try {
+         for (const f of readdirSync(companionRec)) {
+            if (f.includes(sessionId) && f.endsWith('.jsonl')) {
+               return { path: join(companionRec, f), projectDir: 'companion' };
+            }
+         }
+      } catch { /* */ }
+   }
+
    return null;
 }
 

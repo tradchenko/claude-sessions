@@ -224,11 +224,9 @@ export const codexAdapter: AgentAdapter = {
    /**
     * Builds command for Codex session resume.
     */
-   getResumeCommand(sessionId: string): string[] | null {
-      const cliBin = findCodexCli();
-      if (!cliBin) return null;
-
-      return [cliBin, '--resume', sessionId];
+   getResumeCommand(_sessionId: string): string[] | null {
+      // Codex CLI не поддерживает --resume
+      return null;
    },
 
    isSessionAlive(sessionId: string): boolean {

@@ -224,9 +224,8 @@ export const companionAdapter: AgentAdapter = {
          const summary = sessionIndex[sessionId]?.summary || sessionName || project || '';
          const dateStr = formatDate(lastTs);
 
-         // Проверка доступности recording и snapshot
-         const parsed = filenameParsed.get(sessionId);
-         const hasJsonl = parsed ? existsSync(join(RECORDINGS_DIR, parsed.file)) : false;
+         // Companion recording существует — но restore работает через JSONL реального агента
+         // hasJsonl = undefined (не проверяем — дорого), индикатор [!] не показывается
          const hasSnapshot = existsSync(join(SNAPSHOTS_DIR, `${sessionId}.md`));
 
          const session: Session = {
@@ -241,7 +240,6 @@ export const companionAdapter: AgentAdapter = {
             searchText: `${dateStr} ${project} ${summary} companion`.toLowerCase(),
             agent,
             viaCompanion: true,
-            hasJsonl,
             hasSnapshot,
          };
 
