@@ -54,7 +54,7 @@
 ### Phase 3: Подсистема памяти
 **Goal:** Обеспечить надёжный pipeline памяти: extract → store → load → hotness для всех агентов.
 **Requirements:** MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, MEM-06, MEM-07, CODE-05, TEST-03, TEST-08
-**Status:** In Progress (80%)
+**Status:** ✅ Complete (2026-03-21)
 
 | Plan | Title | Status |
 |------|-------|--------|
@@ -74,11 +74,20 @@
 ### Phase 4: Миграция и финальная интеграция
 **Goal:** Обеспечить безопасный upgrade path и покрыть все CLI-команды интеграционными тестами.
 **Requirements:** MIG-01, MIG-02, MIG-03, MIG-04, MIG-05, MIG-06, MIG-07, TEST-04, TEST-05
+**Status:** ✅ Complete (2026-03-21)
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 04-01 | Система миграции: runner, backup, meta.json | ✅ Completed |
+| 04-02 | Lazy migration в CLI и error handling | ✅ Completed |
+| 04-03 | Unit тесты миграции | ✅ Completed |
+| 04-04 | Интеграционные тесты CLI-команд | ✅ Completed |
+
 **Success Criteria:**
 1. `npm install -g claude-sessions` на существующей установке не ломает хуки и не теряет файлы памяти
 2. Повторный postinstall идемпотентен — вызов дважды даёт тот же результат что и один раз
 3. При `--ignore-scripts` lazy migration срабатывает при первом запуске CLI
-4. Интеграционные тесты покрывают все 5 CLI-команд (`list`, `resume`, `restore`, `install`, `extract-memory`) и проходят в CI
+4. Интеграционные тесты покрывают все 5 CLI-команд (`list`, `resume`, `restore`, `install`, `extract-memory`) и проходят в CI ✅
 
 ---
 
