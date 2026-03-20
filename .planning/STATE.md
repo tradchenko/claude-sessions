@@ -8,7 +8,7 @@ progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 6
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -37,6 +37,7 @@ Status: In Progress
 | 02-02 | — | Not Started |
 | 02-03 | Resume для Claude и Codex | Completed |
 | 02-04 | List: дедупликация, фильтры, пустое состояние | Completed |
+| 02-05 | Restore: мультиагентность и идемпотентность | Completed |
 | 02-06 | TUI picker: SIGWINCH и стабильность навигации | Completed |
 
 ## Last Completed
@@ -46,6 +47,7 @@ Status: In Progress
 - Plan 02-01 завершён 2026-03-20: 5 адаптеров как классы с DI (FsDeps), BaseAgentAdapter, AdapterError, 88 тестов зелёные
 - Plan 02-03 завершён 2026-03-20 (повторно): resume всех 5 агентов — AdapterError для всех, Companion делегирует, picker/list обработка, 16 новых тестов, 104 pass
 - Plan 02-04 завершён 2026-03-20: дедупликация (Map по id+project), --agent фильтр, noSessionsMatchFilter i18n, 94 теста зелёные
+- Plan 02-05 завершён 2026-03-20: restore для 5 агентов через registry, идемпотентность, atomic write, frontmatter метаданные, 157 тестов зелёные
 - Plan 02-06 завершён 2026-03-20: SIGWINCH+debounce, cleanup без memory leak, ошибки resume в status bar, навигация при 0 сессий, 94 тестов зелёные
 
 ## Active Tasks
