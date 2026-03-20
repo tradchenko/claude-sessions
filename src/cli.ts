@@ -18,10 +18,16 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { t } from './core/i18n.js';
+import { handleFatalError } from './core/errors.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
-const command = args[0];
+// Флаг --debug: показывать stack traces при ошибках
+const debug = args.includes('--debug');
+const filteredArgs = args.filter(a => a !== '--debug');
+const command = filteredArgs[0];
+
+try {
 
 // Quick launch by number
 if (command && /^\d+$/.test(command)) {
@@ -34,15 +40,15 @@ switch (command) {
    case 'list':
    case 'ls': {
       const { default: list } = await import('./commands/list.js');
-      await list(args.slice(1));
+      await list(filteredArgs.slice(1));
       break;
    }
 
    case 'search':
    case 's': {
-      const query = args.slice(1).join(' ');
+      const query = filteredArgs.slice(1).join(' ');
       if (!query) {
-         console.error('Usage: claude-sessions search <text>');
+         process.stderr.write('Usage: claude-sessions search <text>\n');
          process.exit(1);
       }
       const { default: list } = await import('./commands/list.js');
@@ -53,16 +59,16 @@ switch (command) {
    case 'summarize':
    case 'sum': {
       const { default: summarize } = await import('./commands/summarize.js');
-      await summarize(args.slice(1));
+      await summarize(filteredArgs.slice(1));
       break;
    }
 
    case 'delete':
    case 'del':
    case 'rm': {
-      const id = args[1];
+      const id = filteredArgs[1];
       if (!id) {
-         console.error('Usage: claude-sessions delete <session-id>');
+         process.stderr.write('Usage: claude-sessions delete <session-id>\n');
          process.exit(1);
       }
       const { default: deleteSession } = await import('./commands/delete.js');
@@ -71,9 +77,9 @@ switch (command) {
    }
 
    case 'restore': {
-      const id = args[1];
+      const id = filteredArgs[1];
       if (!id) {
-         console.error('Usage: claude-sessions restore <session-id>');
+         process.stderr.write('Usage: claude-sessions restore <session-id>\n');
          process.exit(1);
       }
       const { default: restore } = await import('./commands/restore.js');
@@ -108,12 +114,12 @@ switch (command) {
    }
 
    case 'memory-search': {
-      if (!args[1]) {
-         console.error('Usage: claude-sessions memory-search <query>');
+      if (!filteredArgs[1]) {
+         process.stderr.write('Usage: claude-sessions memory-search <query>\n');
          process.exit(1);
       }
       const { default: memorySearch } = await import('./commands/memory-search.js');
-      await memorySearch(args.slice(1).join(' '));
+      await memorySearch(filteredArgs.slice(1).join(' '));
       break;
    }
 
@@ -128,10 +134,10 @@ switch (command) {
       const unifiedIndex = index as unknown as Parameters<typeof checkPendingExtractions>[0];
 
       let sessionIds: string[];
-      if (args.includes('--all')) {
+      if (filteredArgs.includes('--all')) {
          sessionIds = checkPendingExtractions(unifiedIndex);
-      } else if (args[1] && !args[1].startsWith('-')) {
-         sessionIds = [args[1]];
+      } else if (filteredArgs[1] && !filteredArgs[1].startsWith('-')) {
+         sessionIds = [filteredArgs[1]];
       } else {
          sessionIds = checkPendingExtractions(unifiedIndex).slice(0, 5);
       }
@@ -236,8 +242,12 @@ Aliases: cs = claude-sessions
    default: {
       // Default — interactive picker
       const { default: picker } = await import('./commands/picker.js');
-      const pickerArgs = command ? ['--' + command, ...args.slice(1)] : args;
+      const pickerArgs = command ? ['--' + command, ...filteredArgs.slice(1)] : filteredArgs;
       await picker(pickerArgs.filter(Boolean));
       break;
    }
+}
+
+} catch (err) {
+   handleFatalError(err, debug);
 }
