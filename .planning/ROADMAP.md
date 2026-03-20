@@ -2,7 +2,7 @@
 
 **Created:** 2026-03-20
 **Granularity:** Coarse
-**Phases:** 4
+**Phases:** 7
 **Requirements:** 48 mapped
 
 ## Phases
@@ -88,6 +88,57 @@
 2. Повторный postinstall идемпотентен — вызов дважды даёт тот же результат что и один раз
 3. При `--ignore-scripts` lazy migration срабатывает при первом запуске CLI
 4. Интеграционные тесты покрывают все 5 CLI-команд (`list`, `resume`, `restore`, `install`, `extract-memory`) и проходят в CI ✅
+
+---
+
+### Phase 5: ESLint config и quality gate
+**Goal:** Закрыть ESLint config discrepancy и разблокировать quality gate для integration тестов.
+**Requirements:** CODE-01, TEST-05
+**Gap Closure:** Closes gaps from audit
+**Status:** Not Started
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 05-01 | ESLint config fix и integration test quality gate | 🔲 Not Started |
+
+**Success Criteria:**
+1. ESLint config обнаруживается integration checker'ом
+2. Integration тесты проходят без ESLint-зависимых предупреждений
+
+---
+
+### Phase 6: Integration cleanup — shared utils и hotness dedup
+**Goal:** Устранить дублирование кода и привести gemini адаптер к использованию shared utils.
+**Requirements:** DATA-01, CODE-03, MEM-04
+**Gap Closure:** Closes integration gaps from audit
+**Status:** Not Started
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 06-01 | gemini.ts → shared utils + session-start hotness dedup | 🔲 Not Started |
+
+**Success Criteria:**
+1. gemini.ts использует safeReadJson/parseJsonlFile из shared utils
+2. session-start.ts импортирует hotness формулы из memory/hotness.ts, не дублирует
+
+---
+
+### Phase 7: README verification, traceability и Nyquist
+**Goal:** Закрыть TEST-08, обновить traceability table и привести все фазы к Nyquist compliance.
+**Requirements:** TEST-08
+**Gap Closure:** Closes TEST-08 + traceability + Nyquist gaps from audit
+**Status:** Not Started
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 07-01 | README verification и traceability update | 🔲 Not Started |
+| 07-02 | Nyquist validation для всех фаз | 🔲 Not Started |
+
+**Success Criteria:**
+1. README команды проверены вручную и соответствуют реальному поведению
+2. Все 45 satisfied requirements обновлены `Pending` → `Complete` в traceability
+3. ROADMAP статус 03-03 исправлен
+4. Nyquist VALIDATION.md заполнены для всех фаз
 
 ---
 

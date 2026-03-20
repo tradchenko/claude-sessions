@@ -153,11 +153,11 @@
 | TEST-02 | 1 | Pending |
 | TEST-03 | 3 | Pending |
 | TEST-04 | 4 | Complete |
-| TEST-05 | 4 | Pending |
+| TEST-05 | 5 | Pending |
 | TEST-06 | 1 | Pending |
 | TEST-07 | 1 | Pending |
-| TEST-08 | 3 | Pending |
-| CODE-01 | 2 | Pending |
+| TEST-08 | 7 | Pending |
+| CODE-01 | 5 | Pending |
 | CODE-02 | 1 | Pending |
 | CODE-03 | 2 | Pending |
 | CODE-04 | 2 | Pending |
