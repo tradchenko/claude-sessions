@@ -12,6 +12,7 @@ import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { BaseAgentAdapter } from './base-adapter.js';
+import { AdapterError } from '../core/errors.js';
 
 /** Qwen Code home directory */
 const QWEN_HOME = join(HOME, '.qwen');
@@ -208,9 +209,21 @@ export class QwenAdapter extends BaseAgentAdapter {
       return sessions.slice(0, limit);
    }
 
+   /**
+    * Формирует команду для возобновления сессии Qwen.
+    * Qwen Code поддерживает --resume <sessionId>.
+    * Если binary не найден → бросаем AdapterError.agentNotInstalled.
+    */
    getResumeCommand(sessionId: string): string[] | null {
       const cli = findQwenCli();
-      if (!cli) return null;
+      if (!cli) {
+         throw new AdapterError({
+            code: 'AGENT_NOT_INSTALLED',
+            message: 'Agent "qwen" is not installed',
+            agentName: 'qwen',
+            suggestion: 'Установите qwen-code и убедитесь что бинарник доступен в PATH',
+         });
+      }
       return [cli, '--resume', sessionId];
    }
 

@@ -12,6 +12,7 @@ import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
 import { BaseAgentAdapter } from './base-adapter.js';
+import { AdapterError } from '../core/errors.js';
 
 /** Gemini CLI home directory */
 const GEMINI_DIR = join(HOME, '.gemini');
@@ -194,10 +195,36 @@ export class GeminiAdapter extends BaseAgentAdapter {
    }
 
    /**
-    * Resume is not supported for Gemini CLI
+    * Формирует команду для возобновления сессии Gemini.
+    * Gemini sessions = git commits, id = "gemini-{projectName}".
+    * Gemini CLI не поддерживает --resume нативно.
+    * Если binary не найден → AGENT_NOT_INSTALLED.
+    * Если project directory не существует → SESSION_NOT_FOUND.
+    * Иначе → открываем gemini в директории проекта.
     */
-   getResumeCommand(_sessionId: string): string[] | null {
-      return null;
+   getResumeCommand(sessionId: string): string[] | null {
+      const bin = findGeminiBin();
+      if (!bin) {
+         throw new AdapterError({
+            code: 'AGENT_NOT_INSTALLED',
+            message: 'Agent "gemini" is not installed',
+            agentName: 'gemini',
+            suggestion: 'Установите gemini-cli и убедитесь что бинарник доступен в PATH',
+         });
+      }
+      // sessionId = "gemini-{projectName}" — извлекаем имя проекта
+      const projectName = sessionId.startsWith('gemini-') ? sessionId.slice(7) : sessionId;
+      const projectHistoryPath = join(HISTORY_DIR, projectName);
+      if (!existsSync(projectHistoryPath)) {
+         throw new AdapterError({
+            code: 'SESSION_NOT_FOUND',
+            message: `Gemini project "${projectName}" not found`,
+            agentName: 'gemini',
+            suggestion: `Убедитесь что директория ~/.gemini/history/${projectName} существует`,
+         });
+      }
+      // Открываем gemini в директории проекта (projectHistoryPath — это git-репо с историей)
+      return [bin];
    }
 
    // isSessionAlive: базовая реализация (false) подходит, Gemini не поддерживает resume
