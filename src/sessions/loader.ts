@@ -91,13 +91,48 @@ export async function loadSessions({
       if (result.status === 'fulfilled') {
          allSessions.push(...result.value);
       }
-      // Individual adapter errors don't break overall loading
+      // Ошибки отдельных адаптеров не прерывают общую загрузку
    }
 
-   // Sort chronologically (newest first)
-   allSessions.sort((a, b) => b.lastTs - a.lastTs);
+   // Кросс-адаптерная дедупликация: ключ = id + ':' + project
+   // Нативный адаптер (viaCompanion !== true) имеет приоритет над Companion
+   const deduped = new Map<string, Session>();
+   let removedDuplicates = 0;
 
-   return allSessions.slice(0, limit);
+   for (const session of allSessions) {
+      const key = `${session.id}:${session.project}`;
+      const existing = deduped.get(key);
+
+      if (!existing) {
+         deduped.set(key, session);
+         continue;
+      }
+
+      // При коллизии: нативный адаптер вытесняет Companion-версию
+      const existingIsCompanion = existing.viaCompanion === true;
+      const currentIsCompanion = session.viaCompanion === true;
+
+      if (existingIsCompanion && !currentIsCompanion) {
+         // Текущая — нативная, заменяем Companion-версию
+         deduped.set(key, session);
+         removedDuplicates++;
+      } else if (!existingIsCompanion && currentIsCompanion) {
+         // Существующая — нативная, пропускаем Companion-версию
+         removedDuplicates++;
+      } else {
+         // Оба нативные или оба Companion — оставляем первую (по времени)
+         removedDuplicates++;
+      }
+   }
+
+   if (removedDuplicates > 0 && process.env.DEBUG_SESSIONS) {
+      process.stderr.write(`[loader] Дедупликация: удалено ${removedDuplicates} дублей\n`);
+   }
+
+   // Сортировка по времени (новые первыми)
+   const sorted = Array.from(deduped.values()).sort((a, b) => b.lastTs - a.lastTs);
+
+   return sorted.slice(0, limit);
 }
 
 // Кеш для readSessionIndex — избегаем повторных readFileSync + JSON.parse

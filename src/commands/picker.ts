@@ -16,6 +16,7 @@ import {
   findSessionJsonl,
 } from "../core/config.js";
 import { t } from "../core/i18n.js";
+import { AdapterError } from "../core/errors.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -150,7 +151,8 @@ class SessionPicker {
   render(): void {
     // Buffer all output and write at once to prevent flickering
     const buf: string[] = [];
-    const w = this.cols;
+    // Минимальная ширина — 40 символов для корректного отображения без обрезки
+    const w = Math.max(40, this.cols);
     // Build entire frame in buffer, write once to prevent flickering
     const agentLabel =
       this.currentAgentFilter === "all" ? "" : ` [${this.currentAgentFilter}]`;
@@ -164,46 +166,54 @@ class SessionPicker {
     const start = this.scrollOffset;
     const end = Math.min(start + this.visibleCount, this.filtered.length);
 
-    for (let i = start; i < end; i++) {
-      const s = this.filtered[i];
-      if (!s) continue;
-      const row = 3 + (i - start);
-      const num = String(i + 1).padStart(3);
-      const isSelected = i === this.selected;
-      const label = AGENT_LABELS[s.agent] || s.agent.slice(0, 3).toUpperCase();
-      const color = AGENT_COLORS[s.agent] || DIM;
-      const via = s.viaCompanion ? " [C]" : "";
-      // Индикатор целостности: ⚠ нет JSONL и snapshot, [S] только snapshot
-      const integrity =
-        s.agent === "claude" && !s.hasJsonl && !s.hasSnapshot
-          ? ` ${RED}[!]${RESET}`
-          : s.agent === "claude" && !s.hasJsonl && s.hasSnapshot
-            ? ` ${YELLOW}[S]${RESET}`
-            : "";
-      // Длина без ANSI-кодов для расчёта ширины
-      const integrityLen = integrity ? 4 : 0;
-      // 5 for label+space, 8 for num+brackets, rest for date+project+summary
-      const prefixLen =
-        5 + 8 + s.dateStr.length + s.project.length + s.cnt.length + via.length + integrityLen;
-      const maxSummary = Math.max(20, w - prefixLen - 4);
-      const truncSummary =
-        s.summary.length > maxSummary
-          ? s.summary.slice(0, maxSummary - 1) + "…"
-          : s.summary;
-
-      if (isSelected) {
-        buf.push(
-          `${ESC}[${row};1H${CLEAR_LINE} ${INVERSE}${BOLD} ${label} ${num}. [${s.dateStr}] ${s.project}${s.cnt}  ${truncSummary}${via} ${RESET}${integrity}`,
-        );
-      } else {
-        buf.push(
-          `${ESC}[${row};1H${CLEAR_LINE}  ${color}${label}${RESET} ${DIM}${num}.${RESET} [${CYAN}${s.dateStr}${RESET}] ${BOLD}${s.project}${RESET}${DIM}${s.cnt}${RESET}  ${truncSummary}${DIM}${via}${RESET}${integrity}`,
-        );
+    // Показать сообщение при 0 сессий после фильтрации
+    if (this.filtered.length === 0) {
+      buf.push(`${ESC}[3;1H${CLEAR_LINE}  ${DIM}${t("noSessionsFound")}${RESET}`);
+      for (let i = 1; i < this.visibleCount; i++) {
+        buf.push(`${ESC}[${3 + i};1H${CLEAR_LINE}`);
       }
-    }
+    } else {
+      for (let i = start; i < end; i++) {
+        const s = this.filtered[i];
+        if (!s) continue;
+        const row = 3 + (i - start);
+        const num = String(i + 1).padStart(3);
+        const isSelected = i === this.selected;
+        const label = AGENT_LABELS[s.agent] || s.agent.slice(0, 3).toUpperCase();
+        const color = AGENT_COLORS[s.agent] || DIM;
+        const via = s.viaCompanion ? " [C]" : "";
+        // Индикатор целостности: ⚠ нет JSONL и snapshot, [S] только snapshot
+        const integrity =
+          s.agent === "claude" && !s.hasJsonl && !s.hasSnapshot
+            ? ` ${RED}[!]${RESET}`
+            : s.agent === "claude" && !s.hasJsonl && s.hasSnapshot
+              ? ` ${YELLOW}[S]${RESET}`
+              : "";
+        // Длина без ANSI-кодов для расчёта ширины
+        const integrityLen = integrity ? 4 : 0;
+        // 5 for label+space, 8 for num+brackets, rest for date+project+summary
+        const prefixLen =
+          5 + 8 + s.dateStr.length + s.project.length + s.cnt.length + via.length + integrityLen;
+        const maxSummary = Math.max(10, w - prefixLen - 4);
+        const truncSummary =
+          s.summary.length > maxSummary
+            ? s.summary.slice(0, maxSummary - 1) + "…"
+            : s.summary;
 
-    for (let i = end - start; i < this.visibleCount; i++) {
-      buf.push(`${ESC}[${3 + i};1H${CLEAR_LINE}`);
+        if (isSelected) {
+          buf.push(
+            `${ESC}[${row};1H${CLEAR_LINE} ${INVERSE}${BOLD} ${label} ${num}. [${s.dateStr}] ${s.project}${s.cnt}  ${truncSummary}${via} ${RESET}${integrity}`,
+          );
+        } else {
+          buf.push(
+            `${ESC}[${row};1H${CLEAR_LINE}  ${color}${label}${RESET} ${DIM}${num}.${RESET} [${CYAN}${s.dateStr}${RESET}] ${BOLD}${s.project}${RESET}${DIM}${s.cnt}${RESET}  ${truncSummary}${DIM}${via}${RESET}${integrity}`,
+          );
+        }
+      }
+
+      for (let i = end - start; i < this.visibleCount; i++) {
+        buf.push(`${ESC}[${3 + i};1H${CLEAR_LINE}`);
+      }
     }
 
     const sepRow = 3 + this.visibleCount;
@@ -247,6 +257,8 @@ class SessionPicker {
   }
 
   moveUp(): void {
+    // При 0 сессий — ничего не делать
+    if (this.filtered.length === 0) return;
     if (this.selected > 0) {
       this.selected--;
     } else {
@@ -256,6 +268,8 @@ class SessionPicker {
   }
 
   moveDown(): void {
+    // При 0 сессий — ничего не делать
+    if (this.filtered.length === 0) return;
     if (this.selected < this.filtered.length - 1) {
       this.selected++;
     } else {
@@ -265,11 +279,13 @@ class SessionPicker {
   }
 
   pageUp(): void {
+    if (this.filtered.length === 0) return;
     this.selected = Math.max(0, this.selected - this.visibleCount);
     this.scrollToSelected();
   }
 
   pageDown(): void {
+    if (this.filtered.length === 0) return;
     this.selected = Math.min(
       this.filtered.length - 1,
       this.selected + this.visibleCount,
@@ -288,7 +304,8 @@ class SessionPicker {
   }
 
   getSelected(): Session | null {
-    return this.filtered[this.selected] || null;
+    // При пустом списке — возвращаем null (не crash)
+    return this.filtered[this.selected] ?? null;
   }
 }
 
@@ -418,22 +435,52 @@ export default async function picker(args: string[] = []): Promise<void> {
       p.render();
     });
 
+  // Debounce timer для SIGWINCH — предотвращаем лишние перерисовки при быстром resize
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+
+  /** Пересчитать размеры и полностью перерисовать picker */
+  function handleResize(): void {
+    if (resizeTimer !== null) {
+      clearTimeout(resizeTimer);
+    }
+    resizeTimer = setTimeout(() => {
+      resizeTimer = null;
+      p.rows = process.stdout.rows || 30;
+      p.cols = process.stdout.columns || 80;
+      p.visibleCount = Math.max(1, p.rows - 7);
+      // Убедиться что scrollOffset не выходит за границы после resize
+      const maxScroll = Math.max(0, p.filtered.length - p.visibleCount);
+      if (p.scrollOffset > maxScroll) {
+        p.scrollOffset = maxScroll;
+      }
+      p.scrollToSelected();
+      // Полная перерисовка — очистить экран перед рендером
+      process.stdout.write(`${ESC}[2J${ESC}[H`);
+      p.render();
+    }, 100);
+  }
+
   function cleanup(): void {
     process.stdout.write(MOUSE_OFF + SHOW_CURSOR + ALT_SCREEN_OFF);
     process.stdin.setRawMode(false);
+    // Снять SIGWINCH listener — предотвратить memory leak
+    process.removeListener("SIGWINCH", handleResize);
+    // Отменить pending debounce timer
+    if (resizeTimer !== null) {
+      clearTimeout(resizeTimer);
+      resizeTimer = null;
+    }
   }
 
   process.on("exit", () => {
     process.stdout.write(MOUSE_OFF + SHOW_CURSOR + ALT_SCREEN_OFF);
   });
 
-  process.stdout.on("resize", () => {
-    p.rows = process.stdout.rows || 30;
-    p.cols = process.stdout.columns || 80;
-    p.visibleCount = p.rows - 7;
-    p.scrollToSelected();
-    p.render();
-  });
+  // SIGWINCH — обработка ресайза терминала (с debounce 100ms)
+  process.on("SIGWINCH", handleResize);
+
+  // stdout resize event — дополнительно для совместимости с некоторыми терминалами
+  process.stdout.on("resize", handleResize);
 
   process.stdin.on("data", (key: string) => {
     // Delete confirmation — FIRST priority
@@ -506,6 +553,7 @@ export default async function picker(args: string[] = []): Promise<void> {
     // Enter — open
     if (key === "\r" || key === "\n") {
       const s = p.getSelected();
+      // Пустой список — не делать ничего (не crash)
       if (!s) return;
 
       cleanup();
@@ -515,7 +563,33 @@ export default async function picker(args: string[] = []): Promise<void> {
         const adapter = getAdapter(
           s.agent as import("../agents/types.js").AgentId,
         );
-        const resumeCmd = adapter?.getResumeCommand(s.id);
+
+        let resumeCmd: string[] | null | undefined;
+        try {
+          resumeCmd = adapter?.getResumeCommand(s.id);
+        } catch (e: unknown) {
+          // AdapterError — показать в status bar, picker продолжает работать
+          if (e instanceof AdapterError) {
+            // Восстановить picker состояние
+            process.stdout.write(ALT_SCREEN_ON + HIDE_CURSOR + MOUSE_ON);
+            process.stdin.setRawMode(true);
+            process.stdin.resume();
+            // Навесить SIGWINCH обратно
+            process.on("SIGWINCH", handleResize);
+            p.statusText = `⚠ ${e.message}`;
+            p.render();
+            // Убрать сообщение через 3 секунды
+            setTimeout(() => {
+              p.statusText = "";
+              p.render();
+            }, 3000);
+            return;
+          }
+          // Критическая ошибка (не AdapterError) — выйти с полной ошибкой
+          const msg = e instanceof Error ? e.message : String(e);
+          console.error(`\n❌ ${msg}\n`);
+          process.exit(1);
+        }
 
         const tryRestore = (): void => {
           const restorePath = join(__dirname, "restore.js");
