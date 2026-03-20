@@ -4,7 +4,7 @@
  */
 
 import type { Result } from './result.js';
-import { ok, err } from './result.js';
+import { ok } from './result.js';
 import { safeReadFile } from './fs.js';
 
 /**

@@ -3,7 +3,7 @@
  */
 
 import { loadSessions } from '../sessions/loader.js';
-import { readSessionCache, writeSessionCache } from '../sessions/cache.js';
+import { readSessionCache } from '../sessions/cache.js';
 import { ensureClaudeDir } from '../core/config.js';
 import { t } from '../core/i18n.js';
 import { getAdapter } from '../agents/registry.js';

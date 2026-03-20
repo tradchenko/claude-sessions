@@ -47,7 +47,6 @@ const SERVER_INFO = {
 
 // Отслеживание активной сессии для сохранения при завершении
 let _currentSessionId: string | null = null;
-let _currentProject: string | null = null;
 let _toolCallCount = 0;
 
 const TOOLS: McpToolDef[] = [

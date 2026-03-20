@@ -6,7 +6,7 @@
  */
 
 import { existsSync, readdirSync, createReadStream } from 'fs';
-import { join, basename } from 'path';
+import { join } from 'path';
 import { createInterface } from 'readline';
 
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';

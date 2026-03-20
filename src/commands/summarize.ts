@@ -3,7 +3,7 @@
  * Uses any available LLM CLI (claude, codex, qwen, gemini) to generate summaries.
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
+import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { spawnSync } from 'child_process';
 import { SESSION_INDEX, PROJECTS_DIR, ensureClaudeDir, findClaudeCli } from '../core/config.js';

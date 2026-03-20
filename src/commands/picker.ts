@@ -38,11 +38,13 @@ const ALT_SCREEN_OFF = `${ESC}[?1049l`;
 const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
 const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
 
-function moveCursor(row: number, col: number): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _moveCursor(row: number, col: number): void {
   process.stdout.write(`${ESC}[${row};${col}H`);
 }
 
-function clearScreen(): void {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function _clearScreen(): void {
   process.stdout.write(`${ESC}[2J${ESC}[H`);
 }
 
@@ -514,7 +516,6 @@ export default async function picker(args: string[] = []): Promise<void> {
           s.agent as import("../agents/types.js").AgentId,
         );
         const resumeCmd = adapter?.getResumeCommand(s.id);
-        const alive = adapter?.isSessionAlive(s.id) ?? false;
 
         const tryRestore = (): void => {
           const restorePath = join(__dirname, "restore.js");

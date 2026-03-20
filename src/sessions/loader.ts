@@ -2,17 +2,12 @@
  * Session data loading and processing
  */
 
-import { readFileSync, writeFileSync, existsSync, statSync, createReadStream } from 'fs';
-import { createInterface } from 'readline';
+import { readFileSync, writeFileSync, existsSync, statSync } from 'fs';
 import { safeReadJson } from '../utils/index.js';
 import {
-   HISTORY_FILE,
    SESSION_INDEX,
    MEMORY_INDEX,
-   formatDate,
-   shortProjectName,
 } from '../core/config.js';
-import { t } from '../core/i18n.js';
 
 /** Session interface for UI display */
 export interface Session {
@@ -33,25 +28,6 @@ export interface Session {
    hasJsonl?: boolean;
    /** Snapshot доступен как fallback */
    hasSnapshot?: boolean;
-}
-
-/** Event entry from history.jsonl */
-interface HistoryEvent {
-   sessionId?: string;
-   project?: string;
-   display?: string;
-   timestamp: number;
-}
-
-/** Session data accumulator during parsing */
-interface SessionAccumulator {
-   id: string;
-   project: string;
-   msg: string;
-   messages: string[];
-   ts: number;
-   lastTs: number;
-   count: number;
 }
 
 /** Summary index entry */
