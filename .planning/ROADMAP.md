@@ -54,6 +54,16 @@
 ### Phase 3: Подсистема памяти
 **Goal:** Обеспечить надёжный pipeline памяти: extract → store → load → hotness для всех агентов.
 **Requirements:** MEM-01, MEM-02, MEM-03, MEM-04, MEM-05, MEM-06, MEM-07, CODE-05, TEST-03, TEST-08
+**Status:** In Progress (40%)
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 03-01 | Research подсистемы памяти | ✅ Completed |
+| 03-02 | L0 extraction, hotness, dedup и целостность индекса | ✅ Completed |
+| 03-03 | L1 extraction pipeline | ⬜ Not Started |
+| 03-04 | Memory store и hotness pruning | ⬜ Not Started |
+| 03-05 | Тесты подсистемы памяти | ⬜ Not Started |
+
 **Success Criteria:**
 1. `claude-sessions extract-memory` завершается успехом для сессий каждого агента, L0 метаданные извлекаются детерминированно
 2. Повторный вызов extract на той же сессии не создаёт дублирующихся воспоминаний

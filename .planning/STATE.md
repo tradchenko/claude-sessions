@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: executing
-last_updated: "2026-03-20T18:19:49.320Z"
+last_updated: "2026-03-20T20:00:00.000Z"
 progress:
   total_phases: 4
   completed_phases: 1
   total_plans: 10
-  completed_plans: 9
+  completed_plans: 11
 ---
 
 # Project State
@@ -16,18 +16,18 @@ progress:
 ## Project Reference
 See: .planning/PROJECT.md (updated 2026-03-20)
 **Core value:** Каждая команда из README работает надёжно и предсказуемо для всех агентов
-**Current focus:** Phase 2
+**Current focus:** Phase 3
 
 ## Current Phase
-Phase 2: Стабилизация ядра (адаптеры и сессии)
+Phase 3: Подсистема памяти
 Status: In Progress
 
 ## Phase Status
 | Phase | Name | Status | Progress |
 |-------|------|--------|----------|
 | 1 | Аудит и тест-инфраструктура | Completed | 100% |
-| 2 | Стабилизация ядра (адаптеры и сессии) | In Progress | 33% |
-| 3 | Подсистема памяти | Not Started | 0% |
+| 2 | Стабилизация ядра (адаптеры и сессии) | Completed | 100% |
+| 3 | Подсистема памяти | In Progress | 40% |
 | 4 | Миграция и финальная интеграция | Not Started | 0% |
 
 ## Plan Progress (Phase 2)
@@ -51,6 +51,7 @@ Status: In Progress
 - Plan 02-05 завершён 2026-03-20: restore для 5 агентов через registry, идемпотентность, atomic write, frontmatter метаданные, 157 тестов зелёные
 - Plan 02-06 завершён 2026-03-20: SIGWINCH+debounce, cleanup без memory leak, ошибки resume в status bar, навигация при 0 сессий, 94 тестов зелёные
 - Plan 02-07 завершён 2026-03-20: 6 тест-файлов (~89 новых тестов), 213 pass total — adapter-di, adapter-resume, session-dedup, restore-idempotent, error-format, picker-resize
+- Plan 03-02 завершён 2026-03-20: L0Data+agent/duration/commands/errors, tau=60, FUZZY_THRESHOLD=0.5+merge, stale tmp cleanup. 213 тестов зелёные
 
 ## Active Tasks
 _Нет активных задач_
