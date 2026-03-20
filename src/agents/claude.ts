@@ -3,7 +3,7 @@
  * Implements AgentAdapter — session loading, CLI detection, resume.
  */
 
-import { readFileSync, existsSync, statSync, createReadStream, readdirSync } from 'fs';
+import { existsSync, statSync, createReadStream, readdirSync } from 'fs';
 import { createInterface } from 'readline';
 import { join } from 'path';
 
@@ -23,6 +23,7 @@ import {
    shortProjectName,
 } from '../core/config.js';
 import { t } from '../core/i18n.js';
+import { safeReadJson } from '../utils/index.js';
 
 /** Event entry from history.jsonl */
 interface HistoryEvent {
@@ -120,19 +121,14 @@ function collectSnapshotIds(): Set<string> {
 }
 
 /**
- * Loads session summary index (unified → legacy fallback)
+ * Загружает индекс сессий (unified → legacy fallback).
+ * Использует safeReadJson из shared utils.
  */
 function loadSessionIndex(): SessionIndex {
-   try {
-      const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8')) as MemoryIndex;
-      return idx.sessions || {};
-   } catch {
-      try {
-         return JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as SessionIndex;
-      } catch {
-         return {};
-      }
-   }
+   const unified = safeReadJson<MemoryIndex>(MEMORY_INDEX);
+   if (unified.ok) return unified.data.sessions ?? {};
+   const legacy = safeReadJson<SessionIndex>(SESSION_INDEX);
+   return legacy.ok ? legacy.data : {};
 }
 
 /**
@@ -284,8 +280,8 @@ export const claudeAdapter: AgentAdapter = {
       try {
          for (const f of readdirSync(sessionsDir)) {
             if (!f.endsWith('.json')) continue;
-            const data = JSON.parse(readFileSync(join(sessionsDir, f), 'utf8')) as { sessionId?: string };
-            if (data.sessionId === sessionId) return true;
+            const result = safeReadJson<{ sessionId?: string }>(join(sessionsDir, f));
+            if (result.ok && result.data.sessionId === sessionId) return true;
          }
       } catch { /* */ }
       return false;

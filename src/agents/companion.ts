@@ -5,7 +5,7 @@
  * with viaCompanion: true flag.
  */
 
-import { existsSync, readdirSync, readFileSync, createReadStream } from 'fs';
+import { existsSync, readdirSync, createReadStream } from 'fs';
 import { join, basename } from 'path';
 import { createInterface } from 'readline';
 
@@ -13,6 +13,7 @@ import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { HOME, formatDate, shortProjectName, SNAPSHOTS_DIR } from '../core/config.js';
 import { readSessionIndex } from '../sessions/loader.js';
+import { safeReadJson } from '../utils/index.js';
 
 /** Companion home directory */
 const COMPANION_DIR = join(HOME, '.companion');
@@ -66,13 +67,11 @@ function isCompanionDetected(): boolean {
    return false;
 }
 
+/** Загружает маппинг session_id → имя из файла session-names.json */
 function loadSessionNames(): SessionNamesMap {
-   try {
-      if (!existsSync(SESSION_NAMES_FILE)) return {};
-      return JSON.parse(readFileSync(SESSION_NAMES_FILE, 'utf8')) as SessionNamesMap;
-   } catch {
-      return {};
-   }
+   if (!existsSync(SESSION_NAMES_FILE)) return {};
+   const result = safeReadJson<SessionNamesMap>(SESSION_NAMES_FILE);
+   return result.ok ? result.data : {};
 }
 
 async function readRecordingHeader(filePath: string): Promise<RecordingHeader | null> {

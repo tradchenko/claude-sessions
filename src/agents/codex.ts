@@ -4,9 +4,10 @@
  */
 
 import { join } from 'path';
-import { existsSync, readFileSync, readdirSync } from 'fs';
+import { existsSync, readdirSync } from 'fs';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
+import { parseJsonlFile } from '../utils/index.js';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
@@ -78,37 +79,24 @@ function findCodexCli(): string | null {
 }
 
 /**
- * Parses history.jsonl and groups entries by session_id
+ * Парсит history.jsonl и группирует записи по session_id.
+ * Использует parseJsonlFile из shared utils.
  */
 function parseHistory(historyPath: string): Map<string, CodexSessionAccumulator> {
    const sessions = new Map<string, CodexSessionAccumulator>();
 
    if (!existsSync(historyPath)) return sessions;
 
-   let content: string;
-   try {
-      content = readFileSync(historyPath, 'utf8');
-   } catch {
-      return sessions;
-   }
+   const result = parseJsonlFile(historyPath);
+   if (!result.ok) return sessions;
 
-   const lines = content.split('\n');
+   for (const raw of result.data) {
+      const entry = raw as CodexHistoryEntry;
 
-   for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-
-      let entry: CodexHistoryEntry;
-      try {
-         entry = JSON.parse(trimmed) as CodexHistoryEntry;
-      } catch {
-         continue;
-      }
-
-      // Skip entries without required fields
+      // Пропускаем записи без обязательных полей
       if (!entry.session_id || !entry.ts) continue;
 
-      // Codex stores timestamp in seconds — normalize to milliseconds
+      // Codex хранит timestamp в секундах — нормализуем в миллисекунды
       const tsMs = entry.ts < 1e12 ? entry.ts * 1000 : entry.ts;
 
       const existing = sessions.get(entry.session_id);

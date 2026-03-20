@@ -4,6 +4,7 @@
 
 import { readFileSync, writeFileSync, existsSync, statSync, createReadStream } from 'fs';
 import { createInterface } from 'readline';
+import { safeReadJson } from '../utils/index.js';
 import {
    HISTORY_FILE,
    SESSION_INDEX,
@@ -128,8 +129,9 @@ let _cachedIndex: SessionIndex | null = null;
 let _cachedMtime: number = 0;
 
 /**
- * Read summary index (try unified, then fallback to legacy)
- * Результат кешируется по mtime файла — повторные вызовы не перечитывают диск
+ * Читает индекс сессий (unified → legacy fallback).
+ * Результат кешируется по mtime файла — повторные вызовы не перечитывают диск.
+ * Использует safeReadJson из shared utils.
  */
 export function readSessionIndex(): SessionIndex {
    // Проверяем mtime основного индекса
@@ -137,23 +139,28 @@ export function readSessionIndex(): SessionIndex {
       const mtime = statSync(MEMORY_INDEX).mtimeMs;
       if (_cachedIndex && mtime === _cachedMtime) return _cachedIndex;
 
-      const idx = JSON.parse(readFileSync(MEMORY_INDEX, 'utf8')) as MemoryIndex;
-      _cachedIndex = idx.sessions || {};
-      _cachedMtime = mtime;
-      return _cachedIndex;
-   } catch {
-      // Fallback к старому session-index.json
-      try {
-         const mtime = statSync(SESSION_INDEX).mtimeMs;
-         if (_cachedIndex && mtime === _cachedMtime) return _cachedIndex;
-
-         _cachedIndex = JSON.parse(readFileSync(SESSION_INDEX, 'utf8')) as SessionIndex;
+      const result = safeReadJson<MemoryIndex>(MEMORY_INDEX);
+      if (result.ok) {
+         _cachedIndex = result.data.sessions ?? {};
          _cachedMtime = mtime;
          return _cachedIndex;
-      } catch {
-         return {};
       }
-   }
+   } catch { /* файл недоступен */ }
+
+   // Fallback к старому session-index.json
+   try {
+      const mtime = statSync(SESSION_INDEX).mtimeMs;
+      if (_cachedIndex && mtime === _cachedMtime) return _cachedIndex;
+
+      const result = safeReadJson<SessionIndex>(SESSION_INDEX);
+      if (result.ok) {
+         _cachedIndex = result.data;
+         _cachedMtime = mtime;
+         return _cachedIndex;
+      }
+   } catch { /* файл недоступен */ }
+
+   return {};
 }
 
 /** Entry in unified index for pending check */

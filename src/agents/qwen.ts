@@ -3,10 +3,11 @@
  * Scans ~/.qwen/projects/{project}/chats/*.jsonl to load sessions
  */
 
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
+import { parseJsonlFile, safeReadJson } from '../utils/index.js';
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
@@ -62,27 +63,13 @@ function projectDirToPath(dirName: string): string {
 }
 
 /**
- * Reads and parses the first N lines from a JSONL file
+ * Читает и парсит первые N строк из JSONL-файла.
+ * Использует parseJsonlFile из shared utils.
  */
 function readFirstLines(filePath: string, maxLines: number): QwenJsonlEntry[] {
-   try {
-      const content = readFileSync(filePath, 'utf8');
-      const lines = content.split('\n');
-      const entries: QwenJsonlEntry[] = [];
-
-      for (let i = 0; i < Math.min(lines.length, maxLines); i++) {
-         const line = lines[i]?.trim();
-         if (!line) continue;
-         try {
-            entries.push(JSON.parse(line) as QwenJsonlEntry);
-         } catch {
-            // Skip invalid lines
-         }
-      }
-      return entries;
-   } catch {
-      return [];
-   }
+   const result = parseJsonlFile(filePath);
+   if (!result.ok) return [];
+   return result.data.slice(0, maxLines) as QwenJsonlEntry[];
 }
 
 /**
@@ -101,21 +88,18 @@ function extractFirstUserMessage(entries: QwenJsonlEntry[]): string {
 }
 
 /**
- * Проверяет наличие session-memory hooks в ~/.qwen/settings.json
+ * Проверяет наличие session-memory hooks в ~/.qwen/settings.json.
+ * Использует safeReadJson из shared utils.
  */
 function hasQwenHooks(): boolean {
    const settingsPath = join(QWEN_HOME, 'settings.json');
    if (!existsSync(settingsPath)) return false;
-   try {
-      const content = readFileSync(settingsPath, 'utf8');
-      const settings = JSON.parse(content) as Record<string, unknown>;
-      const hooks = settings.hooks as Record<string, unknown> | undefined;
-      if (!hooks) return false;
-      const hooksStr = JSON.stringify(hooks);
-      return hooksStr.includes('session-start.js') || hooksStr.includes('session-start-hook');
-   } catch {
-      return false;
-   }
+   const result = safeReadJson<Record<string, unknown>>(settingsPath);
+   if (!result.ok) return false;
+   const hooks = result.data['hooks'] as Record<string, unknown> | undefined;
+   if (!hooks) return false;
+   const hooksStr = JSON.stringify(hooks);
+   return hooksStr.includes('session-start.js') || hooksStr.includes('session-start-hook');
 }
 
 export const qwenAdapter: AgentAdapter = {
