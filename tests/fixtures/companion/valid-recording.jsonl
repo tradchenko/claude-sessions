@@ -1,0 +1,4 @@
+{"type":"_header","version":"1.0","sessionId":"comp-sess-0001","startedAt":1700000001000}
+{"type":"message","role":"user","content":"Start recording session","ts":1700000001100}
+{"type":"message","role":"assistant","content":"Recording started. I will track all actions","ts":1700000001200}
+{"type":"action","kind":"tool_call","tool":"read_file","args":{"path":"/project/main.ts"},"ts":1700000002000}

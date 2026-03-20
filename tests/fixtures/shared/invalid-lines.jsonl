@@ -1,0 +1,7 @@
+{"sessionId":"aaaa1111-bbbb-cccc-dddd-eeeeeeee0001","timestamp":1700000001000,"project":"/home/user/project-a","display":"Valid line 1"}
+this is plain text, not json
+{"sessionId":"aaaa2222-bbbb-cccc-dddd-eeeeeeee0002","timestamp":1700000002000,"project":"/home/user/project-b","display":"Valid line 2"}
+<not-json>XML-like content</not-json>
+
+{"sessionId":"aaaa3333-bbbb-cccc-dddd-eeeeeeee0003","timestamp":1700000003000,"project":"/home/user/project-c","display":"Valid line 3"}
+{broken json without closing brace

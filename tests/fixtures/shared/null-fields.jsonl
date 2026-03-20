@@ -1,0 +1,3 @@
+{"sessionId":null,"timestamp":1700000001000,"project":"/home/user/project-a","display":"Null sessionId"}
+{"sessionId":"aaaa2222-bbbb-cccc-dddd-eeeeeeee0002","timestamp":null,"project":"/home/user/project-b","display":"Null timestamp"}
+{"sessionId":"aaaa3333-bbbb-cccc-dddd-eeeeeeee0003","timestamp":1700000003000,"project":null,"display":"Null project"}
