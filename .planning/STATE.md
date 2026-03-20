@@ -30,16 +30,14 @@ Status: In Progress
 | 3 | Подсистема памяти | In Progress | 40% |
 | 4 | Миграция и финальная интеграция | Not Started | 0% |
 
-## Plan Progress (Phase 2)
+## Plan Progress (Phase 3)
 | Plan | Title | Status |
 |------|-------|--------|
-| 02-01 | Фундамент: DI, BaseAgentAdapter, AdapterError | Completed |
-| 02-02 | — | Not Started |
-| 02-03 | Resume для Claude и Codex | Completed |
-| 02-04 | List: дедупликация, фильтры, пустое состояние | Completed |
-| 02-05 | Restore: мультиагентность и идемпотентность | Completed |
-| 02-06 | TUI picker: SIGWINCH и стабильность навигации | Completed |
-| 02-07 | Unit тесты на адаптеры с DI | Completed |
+| 03-01 | i18n рефакторинг: разбивка монолита на модули | Completed |
+| 03-02 | L0 extraction, hotness, dedup | Completed |
+| 03-03 | — | Not Started |
+| 03-04 | — | Not Started |
+| 03-05 | — | Not Started |
 
 ## Last Completed
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
@@ -51,6 +49,7 @@ Status: In Progress
 - Plan 02-05 завершён 2026-03-20: restore для 5 агентов через registry, идемпотентность, atomic write, frontmatter метаданные, 157 тестов зелёные
 - Plan 02-06 завершён 2026-03-20: SIGWINCH+debounce, cleanup без memory leak, ошибки resume в status bar, навигация при 0 сессий, 94 тестов зелёные
 - Plan 02-07 завершён 2026-03-20: 6 тест-файлов (~89 новых тестов), 213 pass total — adapter-di, adapter-resume, session-dedup, restore-idempotent, error-format, picker-resize
+- Plan 03-01 завершён 2026-03-20: i18n монолит (2282 строки) → 6 модулей в src/core/i18n/, 17 импортов обновлены, 213 тестов зелёные
 - Plan 03-02 завершён 2026-03-20: L0Data+agent/duration/commands/errors, tau=60, FUZZY_THRESHOLD=0.5+merge, stale tmp cleanup. 213 тестов зелёные
 
 ## Active Tasks

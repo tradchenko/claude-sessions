@@ -30,7 +30,7 @@
 ### Phase 2: Стабилизация ядра (адаптеры и сессии)
 **Goal:** Сделать все 5 агент-адаптеров надёжными — resume, list, restore работают корректно для каждого агента.
 **Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12, SESS-13, SESS-14, CODE-01, CODE-03, CODE-04, ERR-01, ERR-02, ERR-03, ERR-04, TEST-01
-**Status:** In Progress
+**Status:** Completed (100%)
 
 | Plan | Title | Status |
 |------|-------|--------|
@@ -58,7 +58,7 @@
 
 | Plan | Title | Status |
 |------|-------|--------|
-| 03-01 | Research подсистемы памяти | ✅ Completed |
+| 03-01 | i18n рефакторинг: разбивка монолита на модули | ✅ Completed |
 | 03-02 | L0 extraction, hotness, dedup и целостность индекса | ✅ Completed |
 | 03-03 | L1 extraction pipeline | ⬜ Not Started |
 | 03-04 | Memory store и hotness pruning | ⬜ Not Started |
