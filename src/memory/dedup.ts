@@ -2,7 +2,7 @@
 import type { MemoryCandidate, MemoryCategory, MemoryEntry, MemoryIndex, MatchResult, ResolutionResult } from './types.js';
 
 const APPENDABLE = new Set<MemoryCategory>(['profile', 'preferences', 'entities', 'patterns']);
-const FUZZY_THRESHOLD = 0.6;
+const FUZZY_THRESHOLD = 0.5;
 const EXACT_SKIP_THRESHOLD = 0.8;
 
 export function jaccardSimilarity(textA: string, textB: string): number {
@@ -63,7 +63,9 @@ export function resolveCandidate(candidate: MemoryCandidate, index: MemoryIndex)
    }
 
    if (match.type === 'fuzzy') {
-      return { action: 'fuzzy', key: match.key, existing: match.existing, similarity: match.similarity };
+      // Fuzzy match — выполняем merge вместо skip: объединяем уникальное из обоих воспоминаний
+      const merged = mergeContent(match.existing.content || '', candidate.content, candidate.category);
+      return { action: 'merge', key: match.key, content: merged };
    }
 
    return { action: 'create', key: `${candidate.category}/${candidate.name}` };
