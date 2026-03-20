@@ -19,6 +19,7 @@ const CATEGORY_WEIGHTS: Record<string, number> = {
    patterns: 0.6,
 };
 
+// SYNC: эти значения должны совпадать с src/memory/hotness.ts и src/memory/catalog.ts
 const DECAY_TAU_DAYS = 60;
 const MAX_CATALOG_ENTRIES = 30;
 const MAX_HOT_CONTENT_CHARS = 3000;
