@@ -23,6 +23,7 @@ export default async function list(args: string[] = []): Promise<void> {
    let limit = 20;
    let projectFilter: string | undefined;
    let searchQuery: string | undefined;
+   let agentFilter: string | undefined;
 
    for (let i = 0; i < args.length; i++) {
       if (args[i] === '--limit' && args[i + 1] !== undefined) {
@@ -34,19 +35,40 @@ export default async function list(args: string[] = []): Promise<void> {
       } else if (args[i] === '--search' && args[i + 1]) {
          searchQuery = args[i + 1];
          i++;
+      } else if (args[i] === '--agent' && args[i + 1]) {
+         agentFilter = args[i + 1];
+         i++;
       } else if (args[i] === '--all') {
          limit = 9999;
       }
    }
 
-   // Use cache for instant response if available
+   // Проверяем установлен ли запрошенный агент (если фильтр указан)
+   if (agentFilter) {
+      const { getAdapter } = await import('../agents/registry.js');
+      const adapter = getAdapter(agentFilter as AgentId);
+      if (!adapter || !adapter.isInstalled()) {
+         process.stderr.write(`Agent ${agentFilter} is not installed. Showing empty list.\n`);
+         console.log(t('noSessionsFound'));
+         return;
+      }
+   }
+
+   // Кеш используем только без фильтров (он уже дедуплицирован при записи)
    const cached = readSessionCache();
-   const sessions = (cached && cached.length > 0 && !projectFilter && !searchQuery)
+   const sessions = (cached && cached.length > 0 && !projectFilter && !searchQuery && !agentFilter)
       ? cached.slice(0, limit)
-      : await loadSessions({ projectFilter, searchQuery, limit });
+      : await loadSessions({ projectFilter, searchQuery, limit, agentFilter });
 
    if (sessions.length === 0) {
-      console.log(t('noSessionsFound'));
+      // Определяем активный фильтр для сообщения
+      const activeFilter = projectFilter ?? agentFilter ?? searchQuery;
+      if (activeFilter) {
+         console.log(t('noSessionsMatchFilter', activeFilter));
+      } else {
+         console.log(t('noSessionsFound'));
+         console.log(t('noSessionsHint'));
+      }
       return;
    }
 
