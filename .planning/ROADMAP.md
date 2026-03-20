@@ -95,15 +95,16 @@
 **Goal:** Закрыть ESLint config discrepancy и разблокировать quality gate для integration тестов.
 **Requirements:** CODE-01, TEST-05
 **Gap Closure:** Closes gaps from audit
-**Status:** Not Started
+**Status:** ✅ Complete (2026-03-21)
 
 | Plan | Title | Status |
 |------|-------|--------|
-| 05-01 | ESLint config fix и integration test quality gate | 🔲 Not Started |
+| 05-01 | ESLint strict config, Prettier, quality gate scripts | ✅ Completed |
 
 **Success Criteria:**
-1. ESLint config обнаруживается integration checker'ом
-2. Integration тесты проходят без ESLint-зависимых предупреждений
+1. ESLint config обнаруживается integration checker'ом ✅
+2. `npm run check` (lint + typecheck) — 0 errors ✅
+3. `npm run build` и `npm test` — 376 pass ✅
 
 ---
 
