@@ -18,6 +18,7 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { t } from './core/i18n/index.js';
 import { handleFatalError } from './core/errors.js';
+import { runMigrations } from './migration/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -27,6 +28,14 @@ const filteredArgs = args.filter(a => a !== '--debug');
 const command = filteredArgs[0];
 
 try {
+
+// Lazy миграция — для случая --ignore-scripts
+const { CLAUDE_DIR: _CLAUDE_DIR, MEMORY_DIR: _MEMORY_DIR } = await import('./core/config.js');
+await runMigrations({
+   claudeDir: _CLAUDE_DIR,
+   dataDir: _MEMORY_DIR,
+   silent: false,
+});
 
 // Quick launch by number
 if (command && /^\d+$/.test(command)) {
