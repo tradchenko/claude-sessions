@@ -42,6 +42,7 @@ Status: In Progress
 - Plan 03-05 завершён 2026-03-21: 6 тест-файлов (86 новых тестов), 299 pass total — fixtures (4 агента), hotness, dedup, index, extract-l0, extract-l1, catalog
 - Plan 04-01 завершён 2026-03-21: src/migration/ (4 файла), runMigrations() с meta.json, backup rotation, atomic write, 299 тестов зелёные
 - Plan 04-03 завершён 2026-03-21: 20 unit тестов миграции, migration-fixtures.mjs, 319 pass total — backup, runMigrations v0→v1, idempotency MIG-03, graceful errors MIG-06, readMeta/writeMeta
+- Plan 04-02 завершён 2026-03-21: lazy runMigrations() в cli.ts, i18n ключи миграции (11 языков), runner.ts через t() — 319 pass
 
 ## Active Tasks
 _Нет активных задач_
