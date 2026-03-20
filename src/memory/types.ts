@@ -37,6 +37,14 @@ export interface L0Data {
    files: string[];
    timestamp?: number;
    topics?: string[];
+   /** Идентификатор агента (claude, codex, qwen, gemini, companion) */
+   agent?: string;
+   /** Длительность сессии в мс (разница первого и последнего сообщения) */
+   duration?: number;
+   /** Команды / tool invocations из сессии */
+   commands?: string[];
+   /** Строки ошибок из сессии */
+   errors?: string[];
 }
 
 /** Memory index — root structure of index.json */
