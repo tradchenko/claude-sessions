@@ -47,7 +47,7 @@ export default async function list(args: string[] = []): Promise<void> {
    if (agentFilter) {
       const { getAdapter } = await import('../agents/registry.js');
       const adapter = getAdapter(agentFilter as AgentId);
-      if (!adapter || !adapter.isInstalled()) {
+      if (!adapter || !adapter.detect()) {
          process.stderr.write(`Agent ${agentFilter} is not installed. Showing empty list.\n`);
          console.log(t('noSessionsFound'));
          return;

@@ -12,6 +12,7 @@ import type { AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { BaseAgentAdapter } from './base-adapter.js';
+import { AdapterError } from '../core/errors.js';
 
 /** Entry from Codex CLI history.jsonl */
 interface CodexHistoryEntry {
@@ -217,11 +218,27 @@ export class CodexAdapter extends BaseAgentAdapter {
    }
 
    /**
-    * Builds command for Codex session resume.
-    * Codex CLI не поддерживает --resume (будет исправлено в плане 03).
+    * Формирует команду для возобновления сессии Codex.
+    * Codex CLI не поддерживает --resume нативно, а history.jsonl не хранит projectPath.
+    * Если binary не найден → бросаем AdapterError.agentNotInstalled.
+    * Иначе → бросаем AdapterError.resumeNotSupported с предложением использовать restore.
     */
    getResumeCommand(_sessionId: string): string[] | null {
-      return null;
+      const cli = findCodexCli();
+      if (!cli) {
+         throw new AdapterError({
+            code: 'AGENT_NOT_INSTALLED',
+            message: 'Agent "codex" is not installed',
+            agentName: 'codex',
+            suggestion: 'Установите codex и убедитесь что бинарник доступен в PATH',
+         });
+      }
+      throw new AdapterError({
+         code: 'RESUME_NOT_SUPPORTED',
+         message: 'Agent "codex" does not support session resume',
+         agentName: 'codex',
+         suggestion: "Use 'restore' to recover session context",
+      });
    }
 
    isSessionAlive(sessionId: string): boolean {

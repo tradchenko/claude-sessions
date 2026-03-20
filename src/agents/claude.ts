@@ -25,6 +25,7 @@ import {
 import { t } from '../core/i18n.js';
 import { safeReadJson } from '../utils/index.js';
 import { BaseAgentAdapter } from './base-adapter.js';
+import { AdapterError } from '../core/errors.js';
 
 /** Event entry from history.jsonl */
 interface HistoryEvent {
@@ -271,11 +272,27 @@ export class ClaudeAdapter extends BaseAgentAdapter {
    }
 
    /**
-    * Command to restore a session: claude --resume <sessionId>
+    * Формирует команду для возобновления сессии: claude --resume <sessionId>.
+    * Бросает AdapterError если binary не найден или sessionId пустой.
     */
    getResumeCommand(sessionId: string): string[] | null {
+      if (!sessionId) {
+         throw new AdapterError({
+            code: 'SESSION_NOT_FOUND',
+            message: `Session "${sessionId}" not found for agent "claude"`,
+            agentName: 'claude',
+            suggestion: 'Убедитесь что сессия существует: cs list --agent claude',
+         });
+      }
       const cliBin = findClaudeCli();
-      if (!cliBin) return null;
+      if (!cliBin) {
+         throw new AdapterError({
+            code: 'AGENT_NOT_INSTALLED',
+            message: 'Agent "claude" is not installed',
+            agentName: 'claude',
+            suggestion: 'Установите claude и убедитесь что бинарник доступен в PATH',
+         });
+      }
       return [cliBin, '--resume', sessionId];
    }
 
