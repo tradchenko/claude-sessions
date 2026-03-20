@@ -196,6 +196,7 @@ type TranslationDict = {
    readonly errSuggestionInstallAgent: (agent: string) => string;
    readonly errSuggestionRestore: string;
    readonly noSessionsHint: string;
+   readonly noSessionsMatchFilter: (filter: string) => string;
 };
 
 /** Все допустимые ключи переводов */
@@ -385,6 +386,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Install ${agent} or use another agent`,
       errSuggestionRestore: "Use 'restore' command instead",
       noSessionsHint: 'Start a session with claude/codex/qwen/gemini first',
+      noSessionsMatchFilter: (filter) => `No sessions match filter '${filter}'`,
    },
    ru: {
       today: 'сегодня',
@@ -568,6 +570,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Установите ${agent} или используйте другой агент`,
       errSuggestionRestore: "Используйте команду 'restore' вместо этого",
       noSessionsHint: 'Начните сессию с claude/codex/qwen/gemini',
+      noSessionsMatchFilter: (filter) => `Сессии по фильтру '${filter}' не найдены`,
    },
    es: {
       today: 'hoy',
@@ -749,6 +752,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Instale ${agent} o use otro agente`,
       errSuggestionRestore: "Use el comando 'restore' en su lugar",
       noSessionsHint: 'Inicie una sesión con claude/codex/qwen/gemini primero',
+      noSessionsMatchFilter: (filter) => `No hay sesiones que coincidan con el filtro '${filter}'`,
    },
    fr: {
       today: "aujourd'hui",
@@ -930,6 +934,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Installez ${agent} ou utilisez un autre agent`,
       errSuggestionRestore: "Utilisez la commande 'restore' à la place",
       noSessionsHint: 'Démarrez une session avec claude/codex/qwen/gemini en premier',
+      noSessionsMatchFilter: (filter) => `Aucune session ne correspond au filtre '${filter}'`,
    },
    de: {
       today: 'heute',
@@ -1111,6 +1116,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Installieren Sie ${agent} oder verwenden Sie einen anderen Agent`,
       errSuggestionRestore: "Verwenden Sie stattdessen den Befehl 'restore'",
       noSessionsHint: 'Starten Sie zuerst eine Sitzung mit claude/codex/qwen/gemini',
+      noSessionsMatchFilter: (filter) => `Keine Sitzungen entsprechen dem Filter '${filter}'`,
    },
    zh: {
       today: '今天',
@@ -1292,6 +1298,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `安装 ${agent} 或使用其他代理`,
       errSuggestionRestore: "请改用 'restore' 命令",
       noSessionsHint: '请先使用 claude/codex/qwen/gemini 开始会话',
+      noSessionsMatchFilter: (filter) => `没有与过滤器 '${filter}' 匹配的会话`,
    },
    'zh-tw': {
       today: '今天',
@@ -1473,6 +1480,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `安裝 ${agent} 或使用其他代理`,
       errSuggestionRestore: "請改用 'restore' 命令",
       noSessionsHint: '請先使用 claude/codex/qwen/gemini 開始工作階段',
+      noSessionsMatchFilter: (filter) => `沒有符合篩選器 '${filter}' 的工作階段`,
    },
    ja: {
       today: '今日',
@@ -1654,6 +1662,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `${agent} をインストールするか、別のエージェントを使用してください`,
       errSuggestionRestore: "'restore' コマンドを代わりに使用してください",
       noSessionsHint: 'まず claude/codex/qwen/gemini でセッションを開始してください',
+      noSessionsMatchFilter: (filter) => `フィルター '${filter}' に一致するセッションはありません`,
    },
    ko: {
       today: '오늘',
@@ -1835,6 +1844,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `${agent}을(를) 설치하거나 다른 에이전트를 사용하세요`,
       errSuggestionRestore: "'restore' 명령을 대신 사용하세요",
       noSessionsHint: '먼저 claude/codex/qwen/gemini로 세션을 시작하세요',
+      noSessionsMatchFilter: (filter) => `필터 '${filter}'와 일치하는 세션이 없습니다`,
    },
    pt: {
       today: 'hoje',
@@ -2016,6 +2026,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `Instale ${agent} ou use outro agente`,
       errSuggestionRestore: "Use o comando 'restore' em vez disso",
       noSessionsHint: 'Inicie uma sessão com claude/codex/qwen/gemini primeiro',
+      noSessionsMatchFilter: (filter) => `Nenhuma sessão corresponde ao filtro '${filter}'`,
    },
    tr: {
       today: 'bugün',
@@ -2197,6 +2208,7 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionInstallAgent: (agent) => `${agent} yükleyin veya başka bir ajan kullanın`,
       errSuggestionRestore: "'restore' komutunu kullanın",
       noSessionsHint: 'Önce claude/codex/qwen/gemini ile bir oturum başlatın',
+      noSessionsMatchFilter: (filter) => `'${filter}' filtresine uyan oturum yok`,
    },
 };
 
