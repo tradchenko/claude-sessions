@@ -6,7 +6,7 @@
  * This ensures correct import resolution and automatic updates.
  */
 
-import { readFileSync, writeFileSync, copyFileSync, existsSync, mkdirSync, createReadStream } from 'fs';
+import { readFileSync, writeFileSync, renameSync, copyFileSync, existsSync, mkdirSync, createReadStream } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createInterface } from 'readline';
@@ -27,6 +27,7 @@ import { t } from '../core/i18n/index.js';
 import { migrateSessionIndex, generateL0ForExistingSessions } from '../memory/migrate.js';
 import { writeIndex } from '../memory/index.js';
 import { enableMemory } from './enable-memory.js';
+import { runMigrations } from '../migration/runner.js';
 
 /** Claude settings structure */
 interface ClaudeSettings {
@@ -221,7 +222,10 @@ function installHook(): void {
 
       // Fix incorrectly formatted or legacy hook entries
       if (migrateHooks(settings)) {
-         writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+         // Atomic write: temp + rename для защиты от частичной записи
+         const tmpMigrate = `${SETTINGS_FILE}.tmp`;
+         writeFileSync(tmpMigrate, JSON.stringify(settings, null, 2));
+         renameSync(tmpMigrate, SETTINGS_FILE);
          if (!isAuto) console.log(`   🔄 Hooks migrated`);
       }
 
@@ -240,7 +244,10 @@ function installHook(): void {
          hooks: [{ type: 'command', command: `node ${join(PKG_DIST, 'hooks', 'stop.js')}` }],
       });
 
-      writeFileSync(SETTINGS_FILE, JSON.stringify(settings, null, 2));
+      // Atomic write: temp + rename для защиты от частичной записи
+      const tmpHook = `${SETTINGS_FILE}.tmp`;
+      writeFileSync(tmpHook, JSON.stringify(settings, null, 2));
+      renameSync(tmpHook, SETTINGS_FILE);
       if (!isAuto) console.log(`   ✅ ${t('stopHookInstalled')}`);
    } catch (e: unknown) {
       const message = e instanceof Error ? e.message : String(e);
@@ -387,13 +394,8 @@ export default async function install(): Promise<void> {
    mkdirSync(MEMORY_DIR, { recursive: true });
    mkdirSync(MEMORIES_DIR, { recursive: true });
 
-   // Migrate existing sessions to new memory index
-   if (existsSync(SESSION_INDEX)) {
-      const index = migrateSessionIndex(SESSION_INDEX, MEMORY_INDEX, PROJECTS_DIR);
-      const l0Count = generateL0ForExistingSessions(index, PROJECTS_DIR);
-      if (l0Count > 0) writeIndex(MEMORY_INDEX, index);
-      console.log(`\n   ${t('memoryMigrated', Object.keys(index.sessions).length, l0Count)}`);
-   }
+   // Запустить системную миграцию схемы данных через runner
+   await runMigrations({ claudeDir: CLAUDE_DIR, dataDir: MEMORY_DIR, silent: isAuto });
 
    // Enable memory integration for all detected agents
    if (!isAuto) {
