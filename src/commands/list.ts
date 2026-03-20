@@ -25,8 +25,8 @@ export default async function list(args: string[] = []): Promise<void> {
    let searchQuery: string | undefined;
 
    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--limit' && args[i + 1]) {
-         limit = parseInt(args[i + 1], 10);
+      if (args[i] === '--limit' && args[i + 1] !== undefined) {
+         limit = parseInt(args[i + 1] ?? '', 10);
          i++;
       } else if (args[i] === '--project' && args[i + 1]) {
          projectFilter = args[i + 1];
@@ -57,6 +57,7 @@ export default async function list(args: string[] = []): Promise<void> {
 
    for (let i = 0; i < sessions.length; i++) {
       const s = sessions[i];
+      if (!s) continue;
       const num = String(i + 1).padStart(2, ' ');
       const msgCount = s.count > 1 ? ` ${t('msgs', s.count)}` : '';
 

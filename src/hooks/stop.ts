@@ -97,7 +97,7 @@ function inlineExtractFilePaths(text: string): string[] {
    const matches = new Set<string>();
    for (const m of text.matchAll(FILE_PATH_RE)) {
       const path = m[1];
-      if (path.includes('/') || path.includes('.')) matches.add(path);
+      if (path && (path.includes('/') || path.includes('.'))) matches.add(path);
    }
    return [...matches].filter((p) => !p.startsWith('http') && !p.startsWith('//'));
 }

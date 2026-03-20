@@ -410,8 +410,9 @@ function handleShutdown(): void {
    if (_toolCallCount > 0 && _currentSessionId) {
       try {
          const index = readIndex(MEMORY_INDEX);
-         if (index.sessions[_currentSessionId]) {
-            index.sessions[_currentSessionId].lastActive = Date.now();
+         const sessEntry = index.sessions[_currentSessionId];
+         if (sessEntry) {
+            sessEntry.lastActive = Date.now();
             writeFileSync(MEMORY_INDEX, JSON.stringify(index, null, 2));
          }
       } catch {

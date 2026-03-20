@@ -302,16 +302,22 @@ async function main(): Promise<void> {
             created: existing?.created ?? now,
             updated: now,
             source_sessions: [...new Set([...(existing?.source_sessions ?? []), sessionId])],
-            projects: [...new Set([...(existing?.projects ?? []), project].filter(Boolean))],
+            projects: [...new Set([...(existing?.projects ?? []), project].filter((p): p is string => Boolean(p)))],
          };
 
          const categoryDir = join(memoriesDir, candidate.category);
          mkdirSync(categoryDir, { recursive: true });
-         writeFileSync(join(categoryDir, candidate.name + '.md'), serializeMemory(index.memories[key], content));
+         const memEntry = index.memories[key];
+         if (memEntry) {
+            writeFileSync(join(categoryDir, candidate.name + '.md'), serializeMemory(memEntry, content));
+         }
       }
 
-      index.sessions[sessionId].l1_ready = true;
-      index.sessions[sessionId].extracted_at = new Date().toISOString();
+      const sessionEntry = index.sessions[sessionId];
+      if (sessionEntry) {
+         sessionEntry.l1_ready = true;
+         sessionEntry.extracted_at = new Date().toISOString();
+      }
       writeIndex(indexPath, index);
    } catch (err) {
       const errorMessage = err instanceof Error ? err.message : String(err);

@@ -73,11 +73,12 @@ export function enforceMemoryLimit(index: MemoryIndex): MemoryIndex {
    if (keys.length <= MAX_MEMORIES) return index;
 
    // Sort by ascending hotness (least hot first)
-   const sorted = keys.sort((a, b) => index.memories[a].hotness - index.memories[b].hotness);
+   const sorted = keys.sort((a, b) => (index.memories[a]?.hotness ?? 0) - (index.memories[b]?.hotness ?? 0));
    const toRemove = keys.length - PRUNE_TARGET;
    const pruned: MemoryIndex = { ...index, memories: { ...index.memories } };
    for (let i = 0; i < toRemove; i++) {
-      delete pruned.memories[sorted[i]];
+      const key = sorted[i];
+      if (key) delete pruned.memories[key];
    }
    return pruned;
 }

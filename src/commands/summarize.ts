@@ -135,11 +135,11 @@ export default async function summarize(args: string[] = []): Promise<void> {
    let targetSession: string | null = null;
 
    for (let i = 0; i < args.length; i++) {
-      if (args[i] === '--limit' && args[i + 1]) {
-         limit = parseInt(args[i + 1]);
+      if (args[i] === '--limit' && args[i + 1] !== undefined) {
+         limit = parseInt(args[i + 1] ?? '');
          i++;
-      } else if (args[i] === '--session' && args[i + 1]) {
-         targetSession = args[i + 1];
+      } else if (args[i] === '--session' && args[i + 1] !== undefined) {
+         targetSession = args[i + 1] ?? null;
          i++;
       }
    }

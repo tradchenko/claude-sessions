@@ -164,6 +164,7 @@ class SessionPicker {
 
     for (let i = start; i < end; i++) {
       const s = this.filtered[i];
+      if (!s) continue;
       const row = 3 + (i - start);
       const num = String(i + 1).padStart(3);
       const isSelected = i === this.selected;
@@ -298,14 +299,14 @@ export default async function picker(args: string[] = []): Promise<void> {
   let quickPick: number | undefined;
 
   for (let i = 0; i < args.length; i++) {
-    if (args[i] === "--project" && args[i + 1]) {
+    if (args[i] === "--project" && args[i + 1] !== undefined) {
       projectFilter = args[i + 1];
       i++;
-    } else if (args[i] === "--search" && args[i + 1]) {
+    } else if (args[i] === "--search" && args[i + 1] !== undefined) {
       searchPreFilter = args[i + 1];
       i++;
-    } else if (args[i] === "--quick" && args[i + 1]) {
-      quickPick = parseInt(args[i + 1]);
+    } else if (args[i] === "--quick" && args[i + 1] !== undefined) {
+      quickPick = parseInt(args[i + 1] ?? '');
       i++;
     }
   }
@@ -353,6 +354,7 @@ export default async function picker(args: string[] = []): Promise<void> {
       process.exit(1);
     }
     const [cmd, ...cmdArgs] = resumeCmd;
+    if (!cmd) { process.exit(1); }
     console.log(`\n▶ ${resumeCmd.join(" ")}\n`);
     try {
       execFileSync(cmd, cmdArgs, { stdio: "inherit" });
@@ -531,12 +533,16 @@ export default async function picker(args: string[] = []): Promise<void> {
         if (resumeCmd && resumeCmd.length > 0) {
           // Есть resume команда — пробуем, при ошибке fallback на restore
           const [cmd, ...cmdArgs] = resumeCmd;
-          console.log(`\n▶ ${resumeCmd.join(" ")}\n`);
-          try {
-            execFileSync(cmd, cmdArgs, { stdio: "inherit" });
-          } catch {
-            console.log(`\n${t("sessionNotFound")}\n`);
+          if (!cmd) {
             tryRestore();
+          } else {
+            console.log(`\n▶ ${resumeCmd.join(" ")}\n`);
+            try {
+              execFileSync(cmd, cmdArgs, { stdio: "inherit" });
+            } catch {
+              console.log(`\n${t("sessionNotFound")}\n`);
+              tryRestore();
+            }
           }
         } else {
           // Агент не поддерживает resume — сразу restore
@@ -578,6 +584,7 @@ export default async function picker(args: string[] = []): Promise<void> {
             return;
           }
           const [bin, ...binArgs] = cmd;
+          if (!bin) return;
           try {
             execFileSync(bin, binArgs, { stdio: "ignore" });
             p.message = `${GREEN}${t("pickerOpenedCompanion")}${RESET}`;
@@ -675,7 +682,7 @@ export default async function picker(args: string[] = []): Promise<void> {
     if (key.startsWith('\x1b[<')) {
       const match = key.match(/\x1b\[<(\d+);/);
       if (match) {
-        const btn = parseInt(match[1]);
+        const btn = parseInt(match[1] ?? '');
         if (btn === 64) { p.moveUp(); p.render(); }
         if (btn === 65) { p.moveDown(); p.render(); }
       }

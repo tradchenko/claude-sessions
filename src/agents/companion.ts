@@ -186,6 +186,8 @@ export const companionAdapter: AgentAdapter = {
          const match = file.match(/^([0-9a-f-]{36})_([a-z]+)_(\d{4}-\d{2}-\d{2}T[\d-]+\.\d+Z)_/);
          if (!match) continue;
          const [, sessionId, backendType, tsStr] = match;
+         // match[1..3] гарантированно не undefined — regex требует захваты
+         if (!sessionId || !backendType || !tsStr) continue;
          const timestamp = new Date(tsStr.replace(/-(?=\d{2}T)/g, '-').replace(/T(\d{2})-(\d{2})-(\d{2})/, 'T$1:$2:$3')).getTime();
          const existing = filenameParsed.get(sessionId);
          if (!existing || timestamp > existing.timestamp) {

@@ -173,6 +173,7 @@ function migrateHooks(settings: ClaudeSettings): boolean {
 
       for (let i = 0; i < arr.length; i++) {
          const entry = arr[i];
+         if (!entry) continue;
 
          // Flat format {type, command} → wrap in {matcher, hooks: [...]}
          if (entry.type && entry.command && !entry.hooks) {
@@ -300,8 +301,10 @@ async function discoverExistingSessions(): Promise<void> {
 
    // Find earliest and latest dates
    const sorted = Array.from(sessionsMap.values()).sort((a, b) => a.ts - b.ts);
-   const oldest = new Date(sorted[0].ts).toLocaleDateString('en-US');
-   const newest = new Date(sorted[sorted.length - 1].ts).toLocaleDateString('en-US');
+   const oldestTs = sorted[0]?.ts ?? Date.now();
+   const newestTs = sorted[sorted.length - 1]?.ts ?? Date.now();
+   const oldest = new Date(oldestTs).toLocaleDateString('en-US');
+   const newest = new Date(newestTs).toLocaleDateString('en-US');
 
    console.log(`   📊 ${t('sessionsFound', total)}`);
    console.log(`   📁 ${t('projects', projects.size, [...projects].slice(0, 5).join(', ') + (projects.size > 5 ? '...' : ''))}`);

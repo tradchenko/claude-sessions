@@ -29,11 +29,11 @@ let sessionId: string | null = null;
 let summary: string | null = null;
 
 for (let i = 0; i < args.length; i++) {
-   if (args[i] === '--session' && args[i + 1]) {
-      sessionId = args[i + 1];
+   if (args[i] === '--session' && args[i + 1] !== undefined) {
+      sessionId = args[i + 1] ?? null;
       i++;
-   } else if (args[i] === '--summary' && args[i + 1]) {
-      summary = args[i + 1];
+   } else if (args[i] === '--summary' && args[i + 1] !== undefined) {
+      summary = args[i + 1] ?? null;
       i++;
    }
 }

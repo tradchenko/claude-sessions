@@ -14,7 +14,8 @@
       "declarationMap": true,
       "sourceMap": true,
       "newLine": "lf",
-      "verbatimModuleSyntax": true
+      "verbatimModuleSyntax": true,
+      "noUncheckedIndexedAccess": true
    },
    "include": ["src/**/*.ts"],
    "exclude": ["node_modules", "dist", "test"]
