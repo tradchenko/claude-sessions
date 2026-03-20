@@ -60,8 +60,7 @@
 |------|-------|--------|
 | 03-01 | i18n рефакторинг: разбивка монолита на модули | ✅ Completed |
 | 03-02 | L0 extraction, hotness, dedup и целостность индекса | ✅ Completed |
-| 03-03 | Memory store и hotness pruning | ⬜ Not Started |
-| 03-04 | extract-memory CLI команда end-to-end | ✅ Completed |
+| 03-03 | 5/5 | Complete   | 2026-03-20 | 03-04 | extract-memory CLI команда end-to-end | ✅ Completed |
 | 03-05 | Unit тесты подсистемы памяти и README verification | ✅ Completed |
 
 **Success Criteria:**
