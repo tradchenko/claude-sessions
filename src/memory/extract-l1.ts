@@ -25,6 +25,8 @@ function sanitizeName(name: string): string {
 }
 
 const EXTRACTION_TIMEOUT = 60_000;
+// HEAD_COUNT + TAIL_COUNT = 50 сообщений — известное ограничение для длинных сессий:
+// средина разговора не попадает в extraction. Достаточно для большинства сессий.
 const HEAD_COUNT = 15;
 const TAIL_COUNT = 35;
 
@@ -57,17 +59,33 @@ JSON array:`;
 }
 
 export function parseLLMResponse(response: string): MemoryCandidate[] {
+   // Пустой ответ → пустой массив
+   if (!response || !response.trim()) return [];
    try {
-      const match = response.match(/\[[\s\S]*\]/);
+      // Ищем JSON-массив объектов: первый '[{' паттерн, избегая markdown [link](url)
+      const match = response.match(/\[\s*\{[\s\S]*\]/);
       if (!match) return [];
       const parsed: unknown = JSON.parse(match[0]);
       if (!Array.isArray(parsed)) return [];
-      return (parsed as unknown[]).filter(
-         (m): m is MemoryCandidate => {
-            const obj = m as Record<string, unknown>;
-            return typeof obj.category === 'string' && typeof obj.name === 'string' && typeof obj.content === 'string' && VALID_CATEGORIES.includes(obj.category as MemoryCategory);
-         },
-      );
+      const result: MemoryCandidate[] = [];
+      for (const m of parsed as unknown[]) {
+         const obj = m as Record<string, unknown>;
+         // Валидация схемы: category и name — непустые строки, content — непустая строка
+         if (
+            typeof obj.category !== 'string' || !obj.category.trim() ||
+            typeof obj.name !== 'string' || !obj.name.trim() ||
+            typeof obj.content !== 'string' || !obj.content.trim()
+         ) {
+            // Невалидный кандидат — пропустить
+            continue;
+         }
+         if (!VALID_CATEGORIES.includes(obj.category as MemoryCategory)) {
+            // Неизвестная категория — пропустить
+            continue;
+         }
+         result.push(obj as unknown as MemoryCandidate);
+      }
+      return result;
    } catch {
       return [];
    }
@@ -207,6 +225,11 @@ function findSessionJSONL(projectsDir: string, sessionId: string, agentId: Agent
    }
 }
 
+/** Синхронная пауза в миллисекундах */
+function sleepSync(ms: number): void {
+   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
 function findClaudeCli(): string | null {
    // Check standard locations first
    const candidates = ['/usr/local/bin/claude', '/opt/homebrew/bin/claude'];
@@ -228,8 +251,26 @@ async function main(): Promise<void> {
    if (!sessionId) process.exit(0);
    const agentId: AgentId = (['claude', 'codex', 'qwen', 'companion', 'gemini'] as const).includes(rawAgentId as AgentId) ? (rawAgentId as AgentId) : 'claude';
 
-   // Gemini has no JSONL — skip extraction entirely
-   if (agentId === 'gemini') process.exit(0);
+   // Gemini has no JSONL — записать l1_skipped флаг и завершить extraction
+   if (agentId === 'gemini') {
+      const memDirG = process.env.MEMORY_DIR || join(process.env.HOME || '', '.claude', 'session-memory');
+      const indexPathG = join(memDirG, 'index.json');
+      const lockPathG = join(memDirG, 'index.lock');
+      if (acquireLock(lockPathG)) {
+         try {
+            const idx = readIndex(indexPathG);
+            if (idx.sessions?.[sessionId]) {
+               idx.sessions[sessionId].l1_skipped = true;
+               writeIndex(indexPathG, idx);
+            }
+         } catch {
+            // Игнорируем ошибки при записи флага
+         } finally {
+            releaseLock(lockPathG);
+         }
+      }
+      return;
+   }
 
    const memoryDir = process.env.MEMORY_DIR || join(process.env.HOME || '', '.claude', 'session-memory');
    const indexPath = join(memoryDir, 'index.json');
@@ -268,12 +309,15 @@ async function main(): Promise<void> {
       if (!claudeCli) throw new Error('Claude CLI not found');
 
       const prompt = buildExtractionPrompt(messages);
-      const proc = spawnSync(claudeCli, ['--model', model, '--print', '--output-format', 'text'], {
-         input: prompt,
-         timeout: EXTRACTION_TIMEOUT,
-         encoding: 'utf8',
-         maxBuffer: 1024 * 1024,
-      });
+      const spawnArgs = ['--model', model, '--print', '--output-format', 'text'] as const;
+      const spawnOpts = { input: prompt, timeout: EXTRACTION_TIMEOUT, encoding: 'utf8' as const, maxBuffer: 1024 * 1024 };
+
+      let proc = spawnSync(claudeCli, [...spawnArgs], spawnOpts);
+      // Retry один раз при ошибке spawnSync (сбой процесса, timeout и т.п.)
+      if (proc.error || proc.status !== 0) {
+         sleepSync(2000);
+         proc = spawnSync(claudeCli, [...spawnArgs], spawnOpts);
+      }
       if (proc.error) throw proc.error;
       if (proc.status !== 0) throw new Error(proc.stderr || 'Claude CLI failed');
       const result = proc.stdout;

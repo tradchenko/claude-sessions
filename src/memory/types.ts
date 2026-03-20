@@ -24,6 +24,7 @@ export interface SessionMeta {
    lastActive: number;
    l0?: L0Data;
    l1_ready?: boolean;
+   l1_skipped?: boolean;
    extracted_at?: string;
    extraction_failed?: boolean;
    extraction_attempts?: number;
