@@ -43,6 +43,7 @@ created: 2026-03-21
 | 05-01-03 | 01 | 1 | CODE-01 | config | `test -f .prettierrc` | ❌ W0 | ⬜ pending |
 | 05-01-04 | 01 | 1 | TEST-05 | integration | `npm run check` | ❌ W0 | ⬜ pending |
 | 05-01-05 | 01 | 1 | CODE-01 | build | `npm run build` | ✅ | ⬜ pending |
+| 05-01-06 | 01 | 1 | TEST-05 | integration | `npm run check && npm run build && npm test` | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
