@@ -198,6 +198,10 @@ type TranslationDict = {
    readonly errSuggestionRestore: string;
    readonly noSessionsHint: string;
    readonly noSessionsMatchFilter: (filter: string) => string;
+   // Сообщения миграции схемы данных
+   readonly migrationStarted: (from: number, to: number) => string;
+   readonly migrationComplete: string;
+   readonly migrationError: (error: string) => string;
 };
 
 /** Все допустимые ключи переводов */
@@ -388,6 +392,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Use 'restore' command instead",
       noSessionsHint: 'Start a session with claude/codex/qwen/gemini first',
       noSessionsMatchFilter: (filter) => `No sessions match filter '${filter}'`,
+      migrationStarted: (from, to) => `Migrating v${from}→v${to}...`,
+      migrationComplete: 'Migration complete',
+      migrationError: (error) => `Migration error: ${error}. Continuing.`,
    },
    ru: {
       today: 'сегодня',
@@ -572,6 +579,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Используйте команду 'restore' вместо этого",
       noSessionsHint: 'Начните сессию с claude/codex/qwen/gemini',
       noSessionsMatchFilter: (filter) => `Сессии по фильтру '${filter}' не найдены`,
+      migrationStarted: (from, to) => `Миграция v${from}→v${to}...`,
+      migrationComplete: 'Миграция завершена',
+      migrationError: (error) => `Ошибка миграции: ${error}. Продолжаю работу.`,
    },
    es: {
       today: 'hoy',
@@ -754,6 +764,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Use el comando 'restore' en su lugar",
       noSessionsHint: 'Inicie una sesión con claude/codex/qwen/gemini primero',
       noSessionsMatchFilter: (filter) => `No hay sesiones que coincidan con el filtro '${filter}'`,
+      migrationStarted: (from, to) => `Migrando v${from}→v${to}...`,
+      migrationComplete: 'Migración completa',
+      migrationError: (error) => `Error de migración: ${error}. Continuando.`,
    },
    fr: {
       today: "aujourd'hui",
@@ -936,6 +949,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Utilisez la commande 'restore' à la place",
       noSessionsHint: 'Démarrez une session avec claude/codex/qwen/gemini en premier',
       noSessionsMatchFilter: (filter) => `Aucune session ne correspond au filtre '${filter}'`,
+      migrationStarted: (from, to) => `Migration v${from}→v${to}...`,
+      migrationComplete: 'Migration terminée',
+      migrationError: (error) => `Erreur de migration : ${error}. Continuation.`,
    },
    de: {
       today: 'heute',
@@ -1118,6 +1134,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Verwenden Sie stattdessen den Befehl 'restore'",
       noSessionsHint: 'Starten Sie zuerst eine Sitzung mit claude/codex/qwen/gemini',
       noSessionsMatchFilter: (filter) => `Keine Sitzungen entsprechen dem Filter '${filter}'`,
+      migrationStarted: (from, to) => `Migration v${from}→v${to}...`,
+      migrationComplete: 'Migration abgeschlossen',
+      migrationError: (error) => `Migrationsfehler: ${error}. Weiter.`,
    },
    zh: {
       today: '今天',
@@ -1300,6 +1319,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "请改用 'restore' 命令",
       noSessionsHint: '请先使用 claude/codex/qwen/gemini 开始会话',
       noSessionsMatchFilter: (filter) => `没有与过滤器 '${filter}' 匹配的会话`,
+      migrationStarted: (from, to) => `迁移 v${from}→v${to}...`,
+      migrationComplete: '迁移完成',
+      migrationError: (error) => `迁移错误：${error}。继续。`,
    },
    'zh-tw': {
       today: '今天',
@@ -1482,6 +1504,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "請改用 'restore' 命令",
       noSessionsHint: '請先使用 claude/codex/qwen/gemini 開始工作階段',
       noSessionsMatchFilter: (filter) => `沒有符合篩選器 '${filter}' 的工作階段`,
+      migrationStarted: (from, to) => `遷移 v${from}→v${to}...`,
+      migrationComplete: '遷移完成',
+      migrationError: (error) => `遷移錯誤：${error}。繼續。`,
    },
    ja: {
       today: '今日',
@@ -1664,6 +1689,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "'restore' コマンドを代わりに使用してください",
       noSessionsHint: 'まず claude/codex/qwen/gemini でセッションを開始してください',
       noSessionsMatchFilter: (filter) => `フィルター '${filter}' に一致するセッションはありません`,
+      migrationStarted: (from, to) => `マイグレーション v${from}→v${to}...`,
+      migrationComplete: 'マイグレーション完了',
+      migrationError: (error) => `マイグレーションエラー: ${error}。続行します。`,
    },
    ko: {
       today: '오늘',
@@ -1846,6 +1874,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "'restore' 명령을 대신 사용하세요",
       noSessionsHint: '먼저 claude/codex/qwen/gemini로 세션을 시작하세요',
       noSessionsMatchFilter: (filter) => `필터 '${filter}'와 일치하는 세션이 없습니다`,
+      migrationStarted: (from, to) => `마이그레이션 v${from}→v${to}...`,
+      migrationComplete: '마이그레이션 완료',
+      migrationError: (error) => `마이그레이션 오류: ${error}. 계속합니다.`,
    },
    pt: {
       today: 'hoje',
@@ -2028,6 +2059,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "Use o comando 'restore' em vez disso",
       noSessionsHint: 'Inicie uma sessão com claude/codex/qwen/gemini primeiro',
       noSessionsMatchFilter: (filter) => `Nenhuma sessão corresponde ao filtro '${filter}'`,
+      migrationStarted: (from, to) => `Migrando v${from}→v${to}...`,
+      migrationComplete: 'Migração concluída',
+      migrationError: (error) => `Erro de migração: ${error}. Continuando.`,
    },
    tr: {
       today: 'bugün',
@@ -2210,6 +2244,9 @@ const translations: Record<SupportedLang, TranslationDict> = {
       errSuggestionRestore: "'restore' komutunu kullanın",
       noSessionsHint: 'Önce claude/codex/qwen/gemini ile bir oturum başlatın',
       noSessionsMatchFilter: (filter) => `'${filter}' filtresine uyan oturum yok`,
+      migrationStarted: (from, to) => `Geçiş v${from}→v${to}...`,
+      migrationComplete: 'Geçiş tamamlandı',
+      migrationError: (error) => `Geçiş hatası: ${error}. Devam ediliyor.`,
    },
 };
 

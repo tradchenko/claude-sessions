@@ -11,6 +11,7 @@ import type { MetaJson, MigrationContext, Migration, MigrationResult } from './t
 import { backupFile, cleanupOldBackups } from './backup.js';
 import { migrateSessionIndex, generateL0ForExistingSessions } from '../memory/migrate.js';
 import { writeIndex } from '../memory/index.js';
+import { t } from '../core/i18n/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..', '..');
@@ -119,7 +120,7 @@ export async function runMigrations(ctx: MigrationContext): Promise<MigrationRes
       const pending = MIGRATIONS.filter((m) => m.fromVersion >= currentVersion);
       for (const migration of pending) {
          if (!ctx.silent) {
-            console.log(`   Migrating schema v${migration.fromVersion} → v${migration.toVersion}...`);
+            console.log(`   ${t('migrationStarted', migration.fromVersion, migration.toVersion)}`);
          }
          await migration.migrate(ctx);
       }
@@ -132,14 +133,14 @@ export async function runMigrations(ctx: MigrationContext): Promise<MigrationRes
       writeMeta(ctx.dataDir, newMeta);
 
       if (!ctx.silent) {
-         console.log(`   Schema migration complete: v${currentVersion} → v${CURRENT_SCHEMA_VERSION}`);
+         console.log(`   ${t('migrationComplete')}`);
       }
 
       return { ok: true, fromVersion: currentVersion, toVersion: CURRENT_SCHEMA_VERSION };
    } catch (err: unknown) {
       // Graceful return при ошибке: логируем, не бросаем
       const error = err instanceof Error ? err.message : String(err);
-      console.error(`   Migration failed (non-fatal): ${error}`);
+      console.error(`   ${t('migrationError', error)}`);
       return { ok: false, fromVersion: currentVersion, toVersion: currentVersion, error };
    }
 }
