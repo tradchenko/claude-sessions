@@ -4,6 +4,13 @@
 
 import type { Session } from '../sessions/loader.js';
 
+/** Зависимости файловой системы для DI в адаптерах */
+export interface FsDeps {
+   readFile(path: string, encoding: BufferEncoding): Promise<string>;
+   readdir(path: string, options: { withFileTypes: true }): Promise<import('fs').Dirent[]>;
+   stat(path: string): Promise<import('fs').Stats>;
+}
+
 /** Supported agents */
 export type AgentId = 'claude' | 'codex' | 'qwen' | 'gemini' | 'companion';
 
