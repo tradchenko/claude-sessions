@@ -43,6 +43,7 @@ Status: In Progress
 - Plan 01-01 завершён 2026-03-20: noUncheckedIndexedAccess, src/utils/, ESLint flat config, 4 атомарных коммита
 - Plan 01-02 завершён 2026-03-20: 19 тестов (DATA-01..07 покрыты), npm test зелёный
 - Plan 01-03 завершён 2026-03-20: session identity тесты (25), fixture матрица (24), 68 тестов total
+- Plan 02-02 завершён 2026-03-20: система ошибок (errors.ts, i18n 11 lang, CLI --debug + try/catch)
 
 ## Active Tasks
 _Нет активных задач_

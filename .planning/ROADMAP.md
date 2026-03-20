@@ -30,6 +30,18 @@
 ### Phase 2: Стабилизация ядра (адаптеры и сессии)
 **Goal:** Сделать все 5 агент-адаптеров надёжными — resume, list, restore работают корректно для каждого агента.
 **Requirements:** SESS-01, SESS-02, SESS-03, SESS-04, SESS-05, SESS-06, SESS-07, SESS-08, SESS-09, SESS-10, SESS-11, SESS-12, SESS-13, SESS-14, CODE-01, CODE-03, CODE-04, ERR-01, ERR-02, ERR-03, ERR-04, TEST-01
+**Status:** In Progress
+
+| Plan | Title | Status |
+|------|-------|--------|
+| 02-01 | BaseAgentAdapter и рефакторинг ClaudeAdapter/CodexAdapter | ✅ Completed |
+| 02-02 | Система структурированных ошибок и exit codes | ✅ Completed |
+| 02-03 | Сессионные адаптеры: resume/restore через AdapterError | Not Started |
+| 02-04 | GeminiAdapter и QwenAdapter | Not Started |
+| 02-05 | CompanionAdapter | Not Started |
+| 02-06 | Дедупликация сессий в list | Not Started |
+| 02-07 | TUI picker стабилизация | Not Started |
+
 **Success Criteria:**
 1. `claude-sessions resume <id>` запускает сессию для каждого из 5 агентов; при отсутствии сессии — понятная ошибка без stack trace
 2. `claude-sessions list` возвращает дедуплицированный список; повторный вызов даёт тот же результат
