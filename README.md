@@ -1,5 +1,7 @@
 # claude-sessions
 
+> **v2.1.0** — session snapshots, integrity indicators, cleanup command
+
 Multi-agent session manager for AI coding assistants. Browse, search, resume, and manage sessions across **Claude Code**, **Codex CLI**, **Qwen Code**, and **Gemini CLI** from a single TUI. Includes a shared memory system that extracts and organizes knowledge from all your coding sessions.
 
 ## Features
@@ -10,7 +12,10 @@ Multi-agent session manager for AI coding assistants. Browse, search, resume, an
 - **Instant startup** — session cache for sub-second launch, background refresh
 - **AI summaries** — uses any available LLM CLI (Claude → Codex → Qwen → Gemini) to generate descriptions
 - **Shared memory** — structured knowledge extraction across all agents with hotness-based ranking
-- **MCP server** — exposes `memory-recall` and `memory-status` tools via stdio JSON-RPC
+- **Session snapshots** — automatic conversation snapshot (first 15 + last 35 messages) on session end; restore from snapshot if JSONL is lost
+- **Integrity indicators** — picker shows `[!]` (restore impossible) and `[S]` (snapshot only); orphaned sessions hidden by default
+- **Cleanup command** — `cs cleanup` removes orphaned sessions with no data; `--dry-run` for preview
+- **MCP server** — exposes `memory-recall`, `memory-status`, `memory-save`, and `save-snapshot` tools via stdio JSON-RPC; auto-loads hot memories via `instructions`
 - **i18n** — 11 languages, auto-detected from system locale
 - **Cross-platform** — macOS, Linux, Windows (WSL)
 - **Zero runtime dependencies** — TypeScript compiled to JS, no packages needed at runtime
@@ -30,13 +35,13 @@ npx @tradchenko/claude-sessions
 
 ## Supported agents
 
-| Agent | Label | Data source | Hooks | Resume | Memory instructions |
-|-------|-------|-------------|-------|--------|-------------------|
-| Claude Code | `CLD` | `~/.claude/history.jsonl` | Stop + SessionStart | `claude --resume` | `CLAUDE.md` |
-| Codex CLI | `CDX` | `~/.codex/history.jsonl` | lazy extraction | `codex --resume` | `AGENTS.md` |
-| Qwen Code | `QWN` | `~/.qwen/projects/*/chats/` | lazy extraction | `qwen --resume` | `QWEN.md` |
-| Gemini CLI | `GEM` | `~/.gemini/history/` (git) | via migration | — | `GEMINI.md` |
-| Companion | `[C]` | `~/.companion/recordings/` | — | — | — |
+| Agent | Label | Data source | Hooks | MCP | Resume | Memory |
+|-------|-------|-------------|-------|-----|--------|--------|
+| Claude Code | `CLD` | `~/.claude/history.jsonl` | ✅ SessionStart + Stop | — | `claude --resume` | Full |
+| Gemini CLI | `GEM` | `~/.gemini/history/` (git) | ✅ SessionStart + AfterAgent | — | — | Full |
+| Qwen Code | `QWN` | `~/.qwen/projects/*/chats/` | ✅ SessionStart + Stop (experimental) | ✅ | `qwen --resume` | Full |
+| Codex CLI | `CDX` | `~/.codex/history.jsonl` | ❌ | ✅ (auto-load via instructions) | `codex --resume` | Via MCP |
+| Companion | `[C]` | `~/.companion/recordings/` | — | — | — | Via real agent |
 
 Companion is not a separate agent — its sessions are attributed to the actual agent (Claude, Codex, etc.) with a `[C]` marker.
 
@@ -55,6 +60,7 @@ Companion is not a separate agent — its sessions are attributed to the actual 
 | `cs enable-memory` | Enable memory integration |
 | `cs disable-memory` | Disable memory integration |
 | `cs extract-memory` | Manually trigger memory extraction |
+| `cs cleanup` | Remove orphaned sessions with no data (`--dry-run` for preview) |
 
 ## TUI picker
 
@@ -68,7 +74,10 @@ Companion is not a separate agent — its sessions are attributed to the actual 
 | Ctrl-D | Delete session |
 | Ctrl-A | AI summarize |
 | Ctrl-R | Refresh |
+| Ctrl-O | Open session in Companion UI (for viaCompanion and Claude sessions) |
+| Ctrl-H | Toggle orphaned sessions visibility |
 | Type text | Instant search |
+| Mouse scroll | Touchpad / mouse wheel scrolling |
 | Esc | Quit |
 
 The picker starts instantly from cache, then loads all agents in the background. A status bar shows loading progress.
@@ -136,10 +145,14 @@ Top memories by hotness are loaded into agent context on session start. Deduplic
 cs mcp-server
 ```
 
-Stdio-based MCP server (JSON-RPC 2.0) exposing two tools:
+Stdio-based MCP server (JSON-RPC 2.0) exposing four tools:
 
 - **`memory-recall`** — search memories by keyword, returns results sorted by hotness
 - **`memory-status`** — memory statistics, category breakdown, top memories
+- **`memory-save`** — save a new memory entry to the knowledge base
+- **`save-snapshot`** — save a conversation snapshot for the current session
+
+**Auto-load:** hot memories are automatically delivered via the `instructions` field during MCP initialization, so agents receive context without explicit tool calls.
 
 Add to your agent's MCP config for cross-agent memory access.
 

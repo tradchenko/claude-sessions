@@ -3,8 +3,11 @@
  */
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { execSync } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import type { AgentInfo } from '../agents/types.js';
+import { findCli } from '../core/config.js';
+import { t } from '../core/i18n.js';
 
 /** Universal memory instructions section for any agent */
 const MEMORY_SECTION = `
@@ -32,6 +35,16 @@ interface GeminiSettings {
    hooks?: {
       SessionStart?: Array<Record<string, unknown>>;
       AfterAgent?: Array<Record<string, unknown>>;
+      [key: string]: unknown;
+   };
+   [key: string]: unknown;
+}
+
+/** Формат settings.json для Qwen CLI (v0.12.6+ с --experimental-hooks) */
+interface QwenSettings {
+   hooks?: {
+      SessionStart?: Array<Record<string, unknown>>;
+      Stop?: Array<Record<string, unknown>>;
       [key: string]: unknown;
    };
    [key: string]: unknown;
@@ -104,8 +117,17 @@ export function enableMemoryForAllAgents(agents: AgentInfo[], scriptsDir: string
          const settingsPath = join(agent.homeDir, 'settings.json');
          enableGeminiHooks(settingsPath, scriptsDir);
       }
-      // Codex/Qwen — no hooks, use lazy extraction
+      // Qwen — hooks через settings.json (v0.12.6+ с --experimental-hooks)
+      if (agent.id === 'qwen') {
+         const settingsPath = join(agent.homeDir, 'settings.json');
+         enableQwenHooks(settingsPath, scriptsDir);
+      }
+      // Codex — no hooks, use lazy extraction
    }
+
+   // MCP серверы для агентов без hooks
+   enableCodexMcp();
+   enableQwenMcp();
 }
 
 /**
@@ -175,5 +197,97 @@ function enableGeminiHooks(settingsPath: string, scriptsDir: string): void {
 
    if (changed) {
       writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+   }
+}
+
+/**
+ * Устанавливает hooks для Qwen CLI (SessionStart + Stop)
+ * Qwen v0.12.6+ поддерживает экспериментальные hooks (--experimental-hooks).
+ * Формат hooks совместим с Claude — JSON в settings.json.
+ */
+function enableQwenHooks(settingsPath: string, scriptsDir: string): void {
+   const settings: QwenSettings = existsSync(settingsPath) ? (JSON.parse(readFileSync(settingsPath, 'utf8')) as QwenSettings) : {};
+   if (!settings.hooks) settings.hooks = {};
+
+   let changed = false;
+
+   // SessionStart — загрузка памяти при старте сессии
+   if (!settings.hooks.SessionStart) settings.hooks.SessionStart = [];
+   const startCmd = `node ${join(scriptsDir, 'hooks', 'session-start.js')}`;
+   const startStr = JSON.stringify(settings.hooks.SessionStart);
+   if (!startStr.includes('session-start.js') && !startStr.includes('session-start-hook')) {
+      settings.hooks.SessionStart.push({
+         matcher: '',
+         hooks: [{ type: 'command', command: startCmd }],
+      } as unknown as Record<string, unknown>);
+      changed = true;
+   }
+
+   // Stop — извлечение памяти при завершении сессии
+   if (!settings.hooks.Stop) settings.hooks.Stop = [];
+   const stopCmd = `node ${join(scriptsDir, 'hooks', 'stop.js')}`;
+   const stopStr = JSON.stringify(settings.hooks.Stop);
+   if (!stopStr.includes('stop.js') && !stopStr.includes('stop-hook')) {
+      settings.hooks.Stop.push({
+         matcher: '',
+         hooks: [{ type: 'command', command: stopCmd }],
+      } as unknown as Record<string, unknown>);
+      changed = true;
+   }
+
+   if (changed) {
+      writeFileSync(settingsPath, JSON.stringify(settings, null, 2));
+   }
+}
+
+/**
+ * Регистрирует MCP сервер session-memory в Codex CLI
+ */
+function enableCodexMcp(): void {
+   try {
+      const codexBin = findCli('codex');
+      if (!codexBin) return;
+
+      // Проверить что сервер ещё не зарегистрирован
+      const listOutput = execSync(`${codexBin} mcp list`, { encoding: 'utf8', timeout: 5000 });
+      if (listOutput.includes('session-memory')) {
+         console.log(`   ${t('codexMcpAlreadyRegistered')}`);
+         return;
+      }
+
+      // Найти путь к cs binary
+      const csBin = findCli('cs') || findCli('claude-sessions');
+      if (!csBin) return;
+
+      execSync(`${codexBin} mcp add session-memory -- ${csBin} mcp-server`, { timeout: 5000 });
+      console.log(`   ✅ ${t('codexMcpRegistered')}`);
+   } catch (e) {
+      console.log(`   ⚠️ Codex MCP: ${e instanceof Error ? e.message : t('mcpError')}`);
+   }
+}
+
+/**
+ * Регистрирует MCP сервер session-memory в Qwen CLI
+ */
+function enableQwenMcp(): void {
+   try {
+      const qwenBin = findCli('qwen');
+      if (!qwenBin) return;
+
+      // Проверить что сервер ещё не зарегистрирован
+      const listOutput = execSync(`${qwenBin} mcp list`, { encoding: 'utf8', timeout: 5000 });
+      if (listOutput.includes('session-memory')) {
+         console.log(`   ${t('qwenMcpAlreadyRegistered')}`);
+         return;
+      }
+
+      // Найти путь к cs binary
+      const csBin = findCli('cs') || findCli('claude-sessions');
+      if (!csBin) return;
+
+      execSync(`${qwenBin} mcp add session-memory -- ${csBin} mcp-server`, { timeout: 5000 });
+      console.log(`   ✅ ${t('qwenMcpRegistered')}`);
+   } catch (e) {
+      console.log(`   ⚠️ Qwen MCP: ${e instanceof Error ? e.message : t('mcpError')}`);
    }
 }

@@ -165,6 +165,12 @@ switch (command) {
       break;
    }
 
+   case 'cleanup': {
+      const { default: cleanup } = await import('./commands/cleanup.js');
+      await cleanup(args.slice(1));
+      break;
+   }
+
    case 'enable-memory': {
       const { enableMemory } = await import('./commands/enable-memory.js');
       const { SETTINGS_FILE, CLAUDE_DIR } = await import('./core/config.js');
@@ -195,6 +201,7 @@ Commands:
   summarize            Generate AI summaries
   delete <id>          Delete a session
   restore <id>         Restore a session from JSONL
+  cleanup              Remove orphaned sessions from index
   install              Install slash commands and hooks
   uninstall            Remove slash commands and hooks
   memory-status (ms)   Memory system status
@@ -216,6 +223,7 @@ TUI picker keys:
   Type text   Instant search
   Enter       Open session
   Ctrl-D      Delete session
+  Ctrl-H      Toggle orphaned sessions
   Ctrl-A      AI summary
   Ctrl-R      Refresh list
   Esc         Exit

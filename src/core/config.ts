@@ -108,6 +108,18 @@ export function findClaudeCli(): string | null {
 }
 
 /**
+ * Ищет CLI утилиту по имени. Возвращает абсолютный путь или null.
+ */
+export function findCli(name: string): string | null {
+   try {
+      const cmd = PLATFORM === 'win32' ? `where ${name}` : `which ${name}`;
+      return execSync(cmd, { encoding: 'utf8', timeout: 3000 }).trim().split('\n')[0] || null;
+   } catch {
+      return null;
+   }
+}
+
+/**
  * Format date (locale-aware)
  */
 export function formatDate(ts: number | string | Date): string {

@@ -221,7 +221,7 @@ export default async function summarize(args: string[] = []): Promise<void> {
    const llm = findAvailableLlm();
    if (!llm) {
       console.error(`❌ ${t('claudeNotInstalled')}`);
-      console.log('   No LLM CLI found (claude, codex, qwen, gemini)');
+      console.log(`   ${t('summarizeLlmNotFound')}`);
       console.log(`\n${t('sessionData')}\n`);
       console.log(sessionsData);
       return;
@@ -320,7 +320,7 @@ Bad: "/mcp", "/login", "Short session"`;
       }
 
       if (skipped > 0) {
-         console.log(`   ⚠️  ${skipped} ID из ответа LLM не совпали с реальными`);
+         console.log(`   ⚠️  ${t('summarizeIdMismatch', skipped)}`);
       }
 
       // Сохраняем в оба индекса (legacy + unified)

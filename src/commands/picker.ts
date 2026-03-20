@@ -34,6 +34,9 @@ const GREEN = `${ESC}[32m`;
 const RED = `${ESC}[31m`;
 const ALT_SCREEN_ON = `${ESC}[?1049h`;
 const ALT_SCREEN_OFF = `${ESC}[?1049l`;
+// Включение/выключение mouse reporting (SGR mode для корректных wheel events)
+const MOUSE_ON = `${ESC}[?1000h${ESC}[?1006h`;
+const MOUSE_OFF = `${ESC}[?1000l${ESC}[?1006l`;
 
 function moveCursor(row: number, col: number): void {
   process.stdout.write(`${ESC}[${row};${col}H`);
@@ -76,6 +79,8 @@ class SessionPicker {
   agentFilterIndex: number;
   /** Unique agents in loaded sessions */
   availableAgents: string[];
+  /** Скрывать недоступные сессии (нет JSONL и нет snapshot) */
+  hideOrphaned: boolean;
 
   constructor(sessions: Session[]) {
     this.allSessions = sessions;
@@ -90,6 +95,7 @@ class SessionPicker {
     this.visibleCount = this.rows - 7;
     this.agentFilterIndex = 0;
     this.statusText = "";
+    this.hideOrphaned = true;
     // Determine available agents from loaded sessions
     this.availableAgents = [...new Set(sessions.map((s) => s.agent))];
   }
@@ -108,8 +114,19 @@ class SessionPicker {
     return filters[this.agentFilterIndex] || "all";
   }
 
+  /** Переключить видимость недоступных сессий */
+  toggleOrphaned(): void {
+    this.hideOrphaned = !this.hideOrphaned;
+    this.filter();
+  }
+
   filter(): void {
     let base = this.allSessions;
+
+    // Скрыть недоступные сессии (нет JSONL и нет snapshot)
+    if (this.hideOrphaned) {
+      base = base.filter((s) => s.hasJsonl !== false || s.hasSnapshot);
+    }
 
     // Filter by agent
     const af = this.currentAgentFilter;
@@ -190,8 +207,9 @@ class SessionPicker {
     buf.push(
       `${ESC}[${sepRow};1H${CLEAR_LINE}${DIM}${"─".repeat(Math.min(w, 100))}${RESET}`,
     );
+    const orphanHint = this.hideOrphaned ? 'show [!]' : 'hide [!]';
     buf.push(
-      `${ESC}[${sepRow + 1};1H${CLEAR_LINE}  ${DIM}↑↓${RESET} ${t("navigate")}  ${DIM}Tab${RESET} agent  ${DIM}Enter${RESET} ${t("open")}  ${DIM}^O${RESET} companion  ${DIM}^D${RESET} ${t("delete_")}  ${DIM}^A${RESET} ${t("aiSummary")}  ${DIM}^R${RESET} ${t("refresh")}  ${DIM}Esc${RESET} ${t("quit")}`,
+      `${ESC}[${sepRow + 1};1H${CLEAR_LINE}  ${DIM}↑↓${RESET} ${t("navigate")}  ${DIM}Tab${RESET} agent  ${DIM}Enter${RESET} ${t("open")}  ${DIM}^O${RESET} companion  ${DIM}^H${RESET} ${orphanHint}  ${DIM}^D${RESET} ${t("delete_")}  ${DIM}^A${RESET} ${t("aiSummary")}  ${DIM}^R${RESET} ${t("refresh")}  ${DIM}Esc${RESET} ${t("quit")}`,
     );
 
     if (this.message) {
@@ -330,7 +348,7 @@ export default async function picker(args: string[] = []): Promise<void> {
     const resumeCmd = adapter?.getResumeCommand(s.id);
     if (!resumeCmd || resumeCmd.length === 0) {
       console.error(
-        `\n❌ CLI для агента "${s.agent}" не найден или resume недоступен\n`,
+        `\n❌ ${t("pickerCliNotFound", s.agent)}\n`,
       );
       process.exit(1);
     }
@@ -340,7 +358,7 @@ export default async function picker(args: string[] = []): Promise<void> {
       execFileSync(cmd, cmdArgs, { stdio: "inherit" });
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error(`\n❌ Не удалось запустить сессию: ${msg}\n`);
+      console.error(`\n❌ ${t("pickerLaunchError", msg)}\n`);
       process.exit(1);
     }
     process.exit(0);
@@ -352,12 +370,14 @@ export default async function picker(args: string[] = []): Promise<void> {
   }
 
   const p = new SessionPicker(sessions);
+  // Применить фильтр orphaned при старте
+  p.filter();
 
   process.stdin.setRawMode(true);
   process.stdin.resume();
   process.stdin.setEncoding("utf8");
 
-  process.stdout.write(ALT_SCREEN_ON + HIDE_CURSOR);
+  process.stdout.write(ALT_SCREEN_ON + HIDE_CURSOR + MOUSE_ON);
   p.render();
 
   // Background: lazy L0 extraction для агентов без hooks (Codex, Qwen)
@@ -372,7 +392,7 @@ export default async function picker(args: string[] = []): Promise<void> {
     });
 
   // Background: load all agent sessions, merge, and update cache
-  p.statusText = "⏳ Loading all agents...";
+  p.statusText = `⏳ ${t("pickerLoadingAgents")}`;
   loadSessions({ projectFilter, searchQuery: searchPreFilter, limit: 500 })
     .then((allSessions) => {
       const existingIds = new Set(p.allSessions.map((s) => s.id));
@@ -395,12 +415,12 @@ export default async function picker(args: string[] = []): Promise<void> {
     });
 
   function cleanup(): void {
-    process.stdout.write(SHOW_CURSOR + ALT_SCREEN_OFF);
+    process.stdout.write(MOUSE_OFF + SHOW_CURSOR + ALT_SCREEN_OFF);
     process.stdin.setRawMode(false);
   }
 
   process.on("exit", () => {
-    process.stdout.write(SHOW_CURSOR + ALT_SCREEN_OFF);
+    process.stdout.write(MOUSE_OFF + SHOW_CURSOR + ALT_SCREEN_OFF);
   });
 
   process.stdout.on("resize", () => {
@@ -502,20 +522,20 @@ export default async function picker(args: string[] = []): Promise<void> {
             execFileSync(cmd, cmdArgs, { stdio: "inherit" });
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
-            console.error(`\n❌ Ошибка при возобновлении сессии: ${msg}\n`);
+            console.error(`\n❌ ${t("pickerResumeError", msg)}\n`);
           }
         } else if (s.agent === "claude") {
           // Мёртвая Claude-сессия — восстанавливаем из JSONL
           console.log(`\n${t("sessionNotFound")}\n`);
           const restorePath = join(__dirname, "restore.js");
           if (!existsSync(restorePath)) {
-            console.error(`\n❌ Файл restore.js не найден: ${restorePath}\n`);
+            console.error(`\n❌ ${t("pickerRestoreNotFound", restorePath)}\n`);
           } else {
             try {
               execFileSync("node", [restorePath, s.id], { stdio: "inherit" });
             } catch (e: unknown) {
               const msg = e instanceof Error ? e.message : String(e);
-              console.error(`\n❌ Ошибка при восстановлении сессии: ${msg}\n`);
+              console.error(`\n❌ ${t("pickerRestoreError", msg)}\n`);
             }
           }
         } else if (resumeCmd && resumeCmd.length > 0) {
@@ -527,12 +547,12 @@ export default async function picker(args: string[] = []): Promise<void> {
           } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : String(e);
             console.error(
-              `\n❌ Ошибка при возобновлении сессии ${s.agent}: ${msg}\n`,
+              `\n❌ ${t("pickerResumeAgentError", s.agent, msg)}\n`,
             );
           }
         } else {
           console.log(
-            `\nSession ${s.agent}:${s.id} — resume not available for this agent\n`,
+            `\n${t("pickerResumeNotAvailable", s.agent, s.id)}\n`,
           );
         }
         process.exit(0);
@@ -561,7 +581,7 @@ export default async function picker(args: string[] = []): Promise<void> {
         import("../agents/companion.js").then(({ companionAdapter }) => {
           const cmd = companionAdapter.getOpenInUiCommand?.(s.id);
           if (!cmd || cmd.length === 0) {
-            p.message = `${RED}Companion не обнаружен${RESET}`;
+            p.message = `${RED}${t("pickerCompanionNotDetected")}${RESET}`;
             p.render();
             setTimeout(() => {
               p.message = "";
@@ -572,9 +592,9 @@ export default async function picker(args: string[] = []): Promise<void> {
           const [bin, ...binArgs] = cmd;
           try {
             execFileSync(bin, binArgs, { stdio: "ignore" });
-            p.message = `${GREEN}Открыто в Companion UI${RESET}`;
+            p.message = `${GREEN}${t("pickerOpenedCompanion")}${RESET}`;
           } catch {
-            p.message = `${RED}Ошибка открытия Companion UI${RESET}`;
+            p.message = `${RED}${t("pickerCompanionOpenError")}${RESET}`;
           }
           p.render();
           setTimeout(() => {
@@ -587,12 +607,12 @@ export default async function picker(args: string[] = []): Promise<void> {
 
       // Claude-сессия — создаём wrapper через Companion API
       if (s.agent === "claude") {
-        p.message = `${DIM}Открываю в Companion...${RESET}`;
+        p.message = `${DIM}${t("pickerOpeningCompanion")}${RESET}`;
         p.render();
         import("../agents/companion.js").then(({ openInCompanionViaApi }) => {
           openInCompanionViaApi(s.id, s.projectPath).then((result) => {
             if (result.ok) {
-              p.message = `${GREEN}Открыто в Companion UI${RESET}`;
+              p.message = `${GREEN}${t("pickerOpenedCompanion")}${RESET}`;
             } else {
               p.message = `${RED}${result.error}${RESET}`;
             }
@@ -607,7 +627,7 @@ export default async function picker(args: string[] = []): Promise<void> {
       }
 
       // Другой агент — не поддерживается
-      p.message = `${RED}Open in Companion не поддерживается для ${s.agent}${RESET}`;
+      p.message = `${RED}${t("pickerCompanionNotSupported", s.agent)}${RESET}`;
       p.render();
       setTimeout(() => {
         p.message = "";
@@ -644,12 +664,12 @@ export default async function picker(args: string[] = []): Promise<void> {
         .then(({ default: summarize }) => summarize([]))
         .catch((e: unknown) => {
           const message =
-            e instanceof Error ? e.message : "Summarization failed";
+            e instanceof Error ? e.message : t("pickerSummarizeFailed");
           console.error(`\n❌ ${message}`);
         })
         .finally(() => {
           // Wait for user to see the result before returning to picker
-          console.log(`\nPress Enter to return to picker...`);
+          console.log(`\n${t("pickerPressEnter")}`);
           process.stdin.resume();
           process.stdin.setRawMode(true);
           process.stdin.once("data", () => {
@@ -660,6 +680,17 @@ export default async function picker(args: string[] = []): Promise<void> {
             picker(args).catch(() => process.exit(1));
           });
         });
+      return;
+    }
+
+    // SGR mouse wheel: \x1b[<64;x;yM (scroll up) \x1b[<65;x;yM (scroll down)
+    if (key.startsWith('\x1b[<')) {
+      const match = key.match(/\x1b\[<(\d+);/);
+      if (match) {
+        const btn = parseInt(match[1]);
+        if (btn === 64) { p.moveUp(); p.render(); }
+        if (btn === 65) { p.moveDown(); p.render(); }
+      }
       return;
     }
 
@@ -704,13 +735,32 @@ export default async function picker(args: string[] = []): Promise<void> {
       return;
     }
 
+    // Ctrl-H — переключить видимость недоступных сессий
+    if (key === '\x08') {
+      p.toggleOrphaned();
+      p.message = p.hideOrphaned
+        ? `${DIM}${t("pickerOrphanedHidden")}${RESET}`
+        : `${DIM}${t("pickerOrphanedShown")}${RESET}`;
+      p.render();
+      setTimeout(() => {
+        p.message = '';
+        p.render();
+      }, 1500);
+      return;
+    }
+
     // Backspace
-    if (key === "\x7f" || key === "\x08") {
+    if (key === '\x7f') {
       if (p.searchText.length > 0) {
         p.searchText = p.searchText.slice(0, -1);
         p.filter();
         p.render();
       }
+      return;
+    }
+
+    // Игнорировать нераспознанные escape последовательности (mouse events и пр.)
+    if (key.startsWith('\x1b[') || key.startsWith('\x1bO')) {
       return;
     }
 

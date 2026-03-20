@@ -160,7 +160,7 @@ export default async function restore(sessionId: string): Promise<void> {
       // Fallback: проверить snapshot
       const snapshotPath = join(SNAPSHOTS_DIR, `${sessionId}.md`);
       if (existsSync(snapshotPath)) {
-         console.log(`\n📋 JSONL не найден, восстановление из snapshot...`);
+         console.log(`\n📋 ${t('jsonlNotFoundSnapshot')}`);
          // Snapshot уже в формате markdown — использовать напрямую
          const contextFile = join(CLAUDE_DIR, 'scripts', '.restore-context.md');
          const snapshotContent = readFileSync(snapshotPath, 'utf8');
@@ -239,7 +239,7 @@ export default async function restore(sessionId: string): Promise<void> {
       const isExitError = e instanceof Error && 'status' in e;
       if (!isExitError) {
          const msg = e instanceof Error ? e.message : String(e);
-         console.error(`\n❌ Ошибка запуска claude CLI: ${msg}\n`);
+         console.error(`\n❌ ${t('restoreCliError', msg)}\n`);
       }
    }
 }

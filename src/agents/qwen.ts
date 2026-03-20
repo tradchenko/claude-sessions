@@ -3,7 +3,7 @@
  * Scans ~/.qwen/projects/{project}/chats/*.jsonl to load sessions
  */
 
-import { existsSync, readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import { HOME, PLATFORM, formatDate, shortProjectName } from '../core/config.js';
@@ -100,6 +100,24 @@ function extractFirstUserMessage(entries: QwenJsonlEntry[]): string {
    return '';
 }
 
+/**
+ * Проверяет наличие session-memory hooks в ~/.qwen/settings.json
+ */
+function hasQwenHooks(): boolean {
+   const settingsPath = join(QWEN_HOME, 'settings.json');
+   if (!existsSync(settingsPath)) return false;
+   try {
+      const content = readFileSync(settingsPath, 'utf8');
+      const settings = JSON.parse(content) as Record<string, unknown>;
+      const hooks = settings.hooks as Record<string, unknown> | undefined;
+      if (!hooks) return false;
+      const hooksStr = JSON.stringify(hooks);
+      return hooksStr.includes('session-start.js') || hooksStr.includes('session-start-hook');
+   } catch {
+      return false;
+   }
+}
+
 export const qwenAdapter: AgentAdapter = {
    id: 'qwen',
    name: 'Qwen Code',
@@ -115,7 +133,7 @@ export const qwenAdapter: AgentAdapter = {
          homeDir: QWEN_HOME,
          cliBin: findQwenCli(),
          instructionsFile: 'QWEN.md',
-         hooksSupport: false,
+         hooksSupport: hasQwenHooks(),
          resumeSupport: true,
       };
    },

@@ -11,7 +11,7 @@ import { createInterface } from 'readline';
 
 import type { AgentAdapter, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
-import { HOME, formatDate, shortProjectName } from '../core/config.js';
+import { HOME, formatDate, shortProjectName, SNAPSHOTS_DIR } from '../core/config.js';
 import { readSessionIndex } from '../sessions/loader.js';
 
 /** Companion home directory */
@@ -224,6 +224,11 @@ export const companionAdapter: AgentAdapter = {
          const summary = sessionIndex[sessionId]?.summary || sessionName || project || '';
          const dateStr = formatDate(lastTs);
 
+         // Проверка доступности recording и snapshot
+         const parsed = filenameParsed.get(sessionId);
+         const hasJsonl = parsed ? existsSync(join(RECORDINGS_DIR, parsed.file)) : false;
+         const hasSnapshot = existsSync(join(SNAPSHOTS_DIR, `${sessionId}.md`));
+
          const session: Session = {
             id: sessionId,
             project,
@@ -236,6 +241,8 @@ export const companionAdapter: AgentAdapter = {
             searchText: `${dateStr} ${project} ${summary} companion`.toLowerCase(),
             agent,
             viaCompanion: true,
+            hasJsonl,
+            hasSnapshot,
          };
 
          // Filtering
