@@ -10,8 +10,8 @@ export const CATEGORY_WEIGHTS: Record<MemoryCategory, number> = {
    patterns: 0.6,
 };
 
-// Decay constant tau (in days). Score drops to ~0.5 in 21 days, ~0.37 in 30 days.
-const DECAY_TAU_DAYS = 30;
+// Decay constant tau (in days). Score drops to ~0.37 in 60 days (~0.5 in 42 days).
+const DECAY_TAU_DAYS = 60;
 
 interface HotnessMemoryInput {
    lastAccessed?: number;
