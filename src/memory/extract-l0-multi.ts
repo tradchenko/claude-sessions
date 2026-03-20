@@ -71,6 +71,7 @@ type CompanionLine = CompanionHeader | CompanionMessage;
 
 function parseCodexHistory(lines: string[], project: string): L0Data {
    const messages: ChatMessage[] = [];
+   let firstTs = 0;
    let latestTs = 0;
 
    for (const line of lines) {
@@ -78,20 +79,26 @@ function parseCodexHistory(lines: string[], project: string): L0Data {
          const entry = JSON.parse(line) as CodexHistoryEntry;
          if (entry.text) {
             messages.push({ role: 'user', content: entry.text });
-            if (entry.ts && entry.ts > latestTs) latestTs = entry.ts;
+            if (entry.ts) {
+               const tsMs = entry.ts * 1000;
+               if (firstTs === 0) firstTs = tsMs;
+               if (tsMs > latestTs) latestTs = tsMs;
+            }
          }
       } catch {
          // Skip malformed lines
       }
    }
 
-   const result = extractL0FromMessages(messages, project);
-   if (latestTs > 0) result.timestamp = latestTs * 1000;
+   const result = extractL0FromMessages(messages, project, 'codex');
+   if (latestTs > 0) result.timestamp = latestTs;
+   if (firstTs > 0 && latestTs > 0 && latestTs > firstTs) result.duration = latestTs - firstTs;
    return result;
 }
 
 function parseCodexSession(lines: string[], project: string): L0Data {
    const messages: ChatMessage[] = [];
+   let firstTs = 0;
    let latestTs = 0;
 
    for (const line of lines) {
@@ -119,20 +126,25 @@ function parseCodexSession(lines: string[], project: string): L0Data {
          // Extract timestamp from session_meta or response_item
          if ('timestamp' in entry && typeof entry.timestamp === 'string') {
             const ts = new Date(entry.timestamp as string).getTime();
-            if (ts > latestTs) latestTs = ts;
+            if (!isNaN(ts)) {
+               if (firstTs === 0) firstTs = ts;
+               if (ts > latestTs) latestTs = ts;
+            }
          }
       } catch {
          // Skip malformed lines
       }
    }
 
-   const result = extractL0FromMessages(messages, project);
+   const result = extractL0FromMessages(messages, project, 'codex-session');
    if (latestTs > 0) result.timestamp = latestTs;
+   if (firstTs > 0 && latestTs > 0 && latestTs > firstTs) result.duration = latestTs - firstTs;
    return result;
 }
 
 function parseQwen(lines: string[], project: string): L0Data {
    const messages: ChatMessage[] = [];
+   let firstTs = 0;
    let latestTs = 0;
 
    for (const line of lines) {
@@ -158,27 +170,32 @@ function parseQwen(lines: string[], project: string): L0Data {
          // Extract timestamp if present
          if (entry.timestamp) {
             const ts = new Date(entry.timestamp).getTime();
-            if (!isNaN(ts) && ts > latestTs) latestTs = ts;
+            if (!isNaN(ts)) {
+               if (firstTs === 0) firstTs = ts;
+               if (ts > latestTs) latestTs = ts;
+            }
          }
       } catch {
          // Skip malformed lines
       }
    }
 
-   const result = extractL0FromMessages(messages, project);
+   const result = extractL0FromMessages(messages, project, 'qwen');
    if (latestTs > 0) result.timestamp = latestTs;
+   if (firstTs > 0 && latestTs > 0 && latestTs > firstTs) result.duration = latestTs - firstTs;
    return result;
 }
 
 function parseGemini(_lines: string[], project: string): L0Data {
-   // Gemini is git-based, no JSONL content to parse.
-   // Return minimal L0 with project name only.
+   // Gemini — git-based, JSONL контент недоступен.
+   // Возвращаем минимальный L0 с project и agent.
    return {
       summary: `Gemini session for ${project}`,
       project,
       messageCount: 0,
       files: [],
       timestamp: Date.now(),
+      agent: 'gemini',
    };
 }
 
@@ -238,6 +255,7 @@ function extractTextFromAcpMessage(msg: Record<string, unknown>): { role: 'user'
 
 function parseCompanion(lines: string[], project: string): L0Data {
    const messages: ChatMessage[] = [];
+   let firstTs = 0;
    let latestTs = 0;
    let headerCwd = '';
 
@@ -249,8 +267,9 @@ function parseCompanion(lines: string[], project: string): L0Data {
          if ('_header' in entry && entry._header) {
             const header = entry as CompanionHeader;
             headerCwd = header.cwd ?? '';
-            if (header.started_at && header.started_at > latestTs) {
-               latestTs = header.started_at;
+            if (header.started_at) {
+               if (firstTs === 0) firstTs = header.started_at;
+               if (header.started_at > latestTs) latestTs = header.started_at;
             }
             continue;
          }
@@ -258,8 +277,11 @@ function parseCompanion(lines: string[], project: string): L0Data {
          const msg = entry as CompanionMessage;
          if (!msg.raw) continue;
 
-         // Track latest timestamp
-         if (msg.ts && msg.ts > latestTs) latestTs = msg.ts;
+         // Track first and latest timestamp
+         if (msg.ts) {
+            if (firstTs === 0) firstTs = msg.ts;
+            if (msg.ts > latestTs) latestTs = msg.ts;
+         }
 
          // Parse the raw JSON-RPC / ACP message
          try {
@@ -277,8 +299,10 @@ function parseCompanion(lines: string[], project: string): L0Data {
    }
 
    const effectiveProject = project || headerCwd || 'unknown';
-   const result = extractL0FromMessages(messages, effectiveProject);
+   const result = extractL0FromMessages(messages, effectiveProject, 'companion');
    if (latestTs > 0) result.timestamp = latestTs;
+   // duration: разница между первым и последним ts (companion хранит epoch в мс)
+   if (firstTs > 0 && latestTs > 0 && latestTs > firstTs) result.duration = latestTs - firstTs;
    return result;
 }
 
@@ -307,6 +331,7 @@ export function extractL0ForAgent(agentId: string, lines: string[], project: str
          messageCount: 0,
          files: [],
          timestamp: Date.now(),
+         agent: agentId,
       };
    }
    return parser(lines, project);
