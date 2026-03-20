@@ -514,30 +514,34 @@ export default async function picker(args: string[] = []): Promise<void> {
         const resumeCmd = adapter?.getResumeCommand(s.id);
         const alive = adapter?.isSessionAlive(s.id) ?? false;
 
-        if (alive && resumeCmd && resumeCmd.length > 0) {
-          // Сессия жива — возобновляем напрямую
+        const tryRestore = (): void => {
+          const restorePath = join(__dirname, "restore.js");
+          if (!existsSync(restorePath)) {
+            console.error(`\n❌ ${t("pickerRestoreNotFound", restorePath)}\n`);
+            return;
+          }
+          try {
+            execFileSync("node", [restorePath, s.id], { stdio: "inherit" });
+          } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            console.error(`\n❌ ${t("pickerRestoreError", msg)}\n`);
+          }
+        };
+
+        if (resumeCmd && resumeCmd.length > 0) {
+          // Есть resume команда — пробуем, при ошибке fallback на restore
           const [cmd, ...cmdArgs] = resumeCmd;
           console.log(`\n▶ ${resumeCmd.join(" ")}\n`);
           try {
             execFileSync(cmd, cmdArgs, { stdio: "inherit" });
-          } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : String(e);
-            console.error(`\n❌ ${t("pickerResumeError", msg)}\n`);
+          } catch {
+            console.log(`\n${t("sessionNotFound")}\n`);
+            tryRestore();
           }
         } else {
-          // Сессия мёртвая или агент не поддерживает resume — restore из JSONL/snapshot
+          // Агент не поддерживает resume — сразу restore
           console.log(`\n${t("sessionNotFound")}\n`);
-          const restorePath = join(__dirname, "restore.js");
-          if (!existsSync(restorePath)) {
-            console.error(`\n❌ ${t("pickerRestoreNotFound", restorePath)}\n`);
-          } else {
-            try {
-              execFileSync("node", [restorePath, s.id], { stdio: "inherit" });
-            } catch (e: unknown) {
-              const msg = e instanceof Error ? e.message : String(e);
-              console.error(`\n❌ ${t("pickerRestoreError", msg)}\n`);
-            }
-          }
+          tryRestore();
         }
         process.exit(0);
       });

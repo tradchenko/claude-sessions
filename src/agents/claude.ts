@@ -229,7 +229,10 @@ export const claudeAdapter: AgentAdapter = {
       const jsonlIds = collectJsonlIds();
       const snapshotIds = collectSnapshotIds();
 
-      let sorted = Array.from(sessionsMap.values()).sort((a, b) => b.lastTs - a.lastTs);
+      let sorted = Array.from(sessionsMap.values())
+         // Скрыть restore-wrapper сессии (созданные через restore.ts)
+         .filter((s) => !s.msg.includes('.restore-context.md'))
+         .sort((a, b) => b.lastTs - a.lastTs);
 
       // Filter by project
       if (projectFilter) {

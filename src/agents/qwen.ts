@@ -216,9 +216,10 @@ export const qwenAdapter: AgentAdapter = {
       return sessions.slice(0, limit);
    },
 
-   getResumeCommand(_sessionId: string): string[] | null {
-      // Qwen --resume ненадёжен для старых сессий — используем restore
-      return null;
+   getResumeCommand(sessionId: string): string[] | null {
+      const cli = findQwenCli();
+      if (!cli) return null;
+      return [cli, '--resume', sessionId];
    },
 
    isSessionAlive(sessionId: string): boolean {
