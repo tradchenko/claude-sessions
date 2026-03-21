@@ -129,12 +129,12 @@
 **Goal:** Закрыть TEST-08, обновить traceability table и привести все фазы к Nyquist compliance.
 **Requirements:** TEST-08
 **Gap Closure:** Closes TEST-08 + traceability + Nyquist gaps from audit
-**Status:** Not Started
+**Status:** Completed
 
 | Plan | Title | Status |
 |------|-------|--------|
 | 07-01 | README verification и traceability update | ✅ Completed |
-| 07-02 | Nyquist validation для всех фаз | 🔲 Not Started |
+| 07-02 | Nyquist validation для всех фаз | ✅ Completed |
 
 **Success Criteria:**
 1. README команды проверены вручную и соответствуют реальному поведению
