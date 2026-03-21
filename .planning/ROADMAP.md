@@ -1,6 +1,7 @@
 # Roadmap: claude-sessions Audit & Stabilization
 
 **Created:** 2026-03-20
+**Last updated:** 2026-03-21
 **Granularity:** Coarse
 **Phases:** 7
 **Requirements:** 48 mapped
@@ -60,7 +61,7 @@
 |------|-------|--------|
 | 03-01 | i18n рефакторинг: разбивка монолита на модули | ✅ Completed |
 | 03-02 | L0 extraction, hotness, dedup и целостность индекса | ✅ Completed |
-| 03-03 | 5/5 | Complete   | 2026-03-20 | 03-04 | extract-memory CLI команда end-to-end | ✅ Completed |
+| 03-03 | L1 аудит и memory loading при старте сессии | ✅ Completed |
 | 03-05 | Unit тесты подсистемы памяти и README verification | ✅ Completed |
 
 **Success Criteria:**
@@ -152,3 +153,19 @@
 | 3 | MEM-01–07, CODE-05, TEST-03, TEST-08 | 10 |
 | 4 | MIG-01–07, TEST-04, TEST-05 | 9 |
 | **Total** | | **48** ✓ |
+
+---
+
+## Summary
+
+| Metric | Value |
+|--------|-------|
+| Total tests | 379 |
+| Test suites | 103 |
+| Requirements coverage | 48/48 (100%) |
+| Phase 1 completed | 2026-03-20 |
+| Phase 2 completed | 2026-03-20 |
+| Phase 3 completed | 2026-03-21 |
+| Phase 4 completed | 2026-03-21 |
+| Phase 5 completed | 2026-03-21 |
+| Phase 6 completed | 2026-03-21 |
