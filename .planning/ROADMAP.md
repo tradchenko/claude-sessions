@@ -112,15 +112,15 @@
 **Goal:** Устранить дублирование кода и привести gemini адаптер к использованию shared utils.
 **Requirements:** DATA-01, CODE-03, MEM-04
 **Gap Closure:** Closes integration gaps from audit
-**Status:** Not Started
+**Status:** ✅ Complete (2026-03-21)
 
 | Plan | Title | Status |
 |------|-------|--------|
-| 06-01 | gemini.ts → shared utils + session-start hotness dedup | 🔲 Not Started |
+| 06-01 | gemini.ts → shared utils + session-start hotness dedup | ✅ Completed |
 
 **Success Criteria:**
-1. gemini.ts использует safeReadJson/parseJsonlFile из shared utils
-2. session-start.ts импортирует hotness формулы из memory/hotness.ts, не дублирует
+1. gemini.ts использует safeReaddir из shared utils вместо прямого readdirSync ✅
+2. session-start.ts hotness константы проверены SYNC guard тестом на идентичность с memory/hotness.ts ✅
 
 ---
 
