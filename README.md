@@ -61,6 +61,8 @@ Companion is not a separate agent — its sessions are attributed to the actual 
 | `cs disable-memory` | Disable memory integration |
 | `cs extract-memory [--agent <id>] [--session <id>] [--all]` | Manually trigger memory extraction |
 | `cs cleanup` | Remove orphaned sessions with no data (`--dry-run` for preview) |
+| `cs delete <id>` | Delete a session by ID |
+| `cs restore <id>` | Restore a session from JSONL snapshot |
 
 ## TUI picker
 
@@ -214,7 +216,7 @@ src/
 ```bash
 npm install          # install devDependencies (typescript, @types/node)
 npm run build        # compile TypeScript → dist/
-npm test             # run all tests (108 tests across 3 suites)
+npm test             # run all tests (379 tests across 103 suites)
 npm link             # link for local testing
 ```
 
