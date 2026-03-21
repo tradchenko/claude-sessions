@@ -1,9 +1,9 @@
 ---
 phase: 1
 slug: audit-test-infrastructure
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: completed
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-20
 ---
 
@@ -38,12 +38,12 @@ created: 2026-03-20
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 01-01-01 | 01 | 1 | TEST-07 | config | `npm test` | ❌ W0 | ⬜ pending |
-| 01-01-02 | 01 | 1 | CODE-02 | compile | `npx tsc --noEmit` | ❌ W0 | ⬜ pending |
-| 01-02-01 | 02 | 1 | DATA-01..07 | unit | `npm test` | ❌ W0 | ⬜ pending |
-| 01-02-02 | 02 | 1 | DATA-05 | unit | `npm test` | ❌ W0 | ⬜ pending |
-| 01-03-01 | 03 | 2 | SESS-15 | unit | `npm test` | ❌ W0 | ⬜ pending |
-| 01-03-02 | 03 | 2 | TEST-02 | integration | `npm test` | ❌ W0 | ⬜ pending |
+| 01-01-01 | 01 | 1 | TEST-07 | config | `npm test` | ✅ | ✅ |
+| 01-01-02 | 01 | 1 | CODE-02 | compile | `npx tsc --noEmit` | ✅ | ✅ |
+| 01-02-01 | 02 | 1 | DATA-01..07 | unit | `npm test` | ✅ | ✅ |
+| 01-02-02 | 02 | 1 | DATA-05 | unit | `npm test` | ✅ | ✅ |
+| 01-03-01 | 03 | 2 | SESS-15 | unit | `npm test` | ✅ | ✅ |
+| 01-03-02 | 03 | 2 | TEST-02 | integration | `npm test` | ✅ | ✅ |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,10 +51,10 @@ created: 2026-03-20
 
 ## Wave 0 Requirements
 
-- [ ] `tests/` — создать директорию тестов
-- [ ] `tests/fixtures/shared/` — fixture-файлы для edge cases
-- [ ] `tests/fixtures/claude/` — fixture для Claude сессий
-- [ ] Настроить `node:test` в package.json scripts
+- [x] `tests/` — создать директорию тестов
+- [x] `tests/fixtures/shared/` — fixture-файлы для edge cases
+- [x] `tests/fixtures/claude/` — fixture для Claude сессий
+- [x] Настроить `node:test` в package.json scripts
 
 *Existing infrastructure: node:test доступен (Node.js built-in), но тесты и fixtures отсутствуют.*
 
@@ -70,11 +70,11 @@ created: 2026-03-20
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved

@@ -1,9 +1,9 @@
 ---
 phase: 5
 slug: eslint-quality-gate
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: completed
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-03-21
 ---
 
@@ -38,12 +38,12 @@ created: 2026-03-21
 
 | Task ID | Plan | Wave | Requirement | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 1 | CODE-01 | lint | `npm run lint` | ❌ W0 | ⬜ pending |
-| 05-01-02 | 01 | 1 | CODE-01 | config | `test -f .prettierrc` | ❌ W0 | ⬜ pending |
-| 05-01-03 | 01 | 1 | CODE-01 | config | `test -f eslint.config.mjs` | ❌ W0 | ⬜ pending |
-| 05-01-04 | 01 | 1 | TEST-05 | integration | `npm run check` | ❌ W0 | ⬜ pending |
-| 05-01-05 | 01 | 1 | CODE-01 | build | `npm run build` | ✅ | ⬜ pending |
-| 05-01-06 | 01 | 1 | TEST-05 | integration | `npm run check && npm run build && npm test` | ✅ | ⬜ pending |
+| 05-01-01 | 01 | 1 | CODE-01 | lint | `npm run lint` | ✅ | ✅ |
+| 05-01-02 | 01 | 1 | CODE-01 | config | `test -f .prettierrc` | ✅ | ✅ |
+| 05-01-03 | 01 | 1 | CODE-01 | config | `test -f eslint.config.mjs` | ✅ | ✅ |
+| 05-01-04 | 01 | 1 | TEST-05 | integration | `npm run check` | ✅ | ✅ |
+| 05-01-05 | 01 | 1 | CODE-01 | build | `npm run build` | ✅ | ✅ |
+| 05-01-06 | 01 | 1 | TEST-05 | integration | `npm run check && npm run build && npm test` | ✅ | ✅ |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,9 +51,9 @@ created: 2026-03-21
 
 ## Wave 0 Requirements
 
-- [ ] `eslint.config.mjs` — migrate from existing eslint.config.js to flat config with strict rules
-- [ ] `.prettierrc` — create with project settings (tabWidth=3, singleQuote, printWidth=180)
-- [ ] `npm install -D eslint-plugin-import eslint-import-resolver-typescript eslint-config-prettier` — missing dependencies
+- [x] `eslint.config.mjs` — migrate from existing eslint.config.js to flat config with strict rules
+- [x] `.prettierrc` — create with project settings (tabWidth=3, singleQuote, printWidth=180)
+- [x] `npm install -D eslint-plugin-import eslint-import-resolver-typescript eslint-config-prettier` — missing dependencies
 
 *Existing infrastructure: vitest, tsc --noEmit already configured.*
 
@@ -67,11 +67,11 @@ created: 2026-03-21
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 15s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 15s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved
