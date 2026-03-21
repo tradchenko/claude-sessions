@@ -10,9 +10,9 @@ import type { Session } from '../sessions/loader.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { HOME, PLATFORM, formatDate } from '../core/config.js';
 import { AdapterError } from '../core/errors.js';
+import { safeReaddir } from '../utils/fs.js';
 import type { AgentInfo, AgentLoadOptions } from './types.js';
 import { BaseAgentAdapter } from './base-adapter.js';
-import { safeReaddir } from '../utils/fs.js';
 
 /** Gemini CLI home directory */
 const GEMINI_DIR = join(HOME, '.gemini');
