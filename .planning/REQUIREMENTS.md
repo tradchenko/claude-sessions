@@ -109,59 +109,59 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | 2 | Pending |
-| SESS-02 | 2 | Pending |
-| SESS-03 | 2 | Pending |
-| SESS-04 | 2 | Pending |
-| SESS-05 | 2 | Pending |
-| SESS-06 | 2 | Pending |
-| SESS-07 | 2 | Pending |
-| SESS-08 | 2 | Pending |
-| SESS-09 | 2 | Pending |
-| SESS-10 | 2 | Pending |
-| SESS-11 | 2 | Pending |
-| SESS-12 | 2 | Pending |
-| SESS-13 | 2 | Pending |
-| SESS-14 | 2 | Pending |
-| SESS-15 | 1 | Pending |
-| DATA-01 | 1 | Pending |
-| DATA-02 | 1 | Pending |
-| DATA-03 | 1 | Pending |
-| DATA-04 | 1 | Pending |
-| DATA-05 | 1 | Pending |
-| DATA-06 | 1 | Pending |
-| DATA-07 | 1 | Pending |
-| MEM-01 | 3 | Pending |
-| MEM-02 | 3 | Pending |
-| MEM-03 | 3 | Pending |
-| MEM-04 | 3 | Pending |
-| MEM-05 | 3 | Pending |
-| MEM-06 | 3 | Pending |
-| MEM-07 | 3 | Pending |
-| MIG-01 | 4 | Pending |
-| MIG-02 | 4 | Pending |
-| MIG-03 | 4 | Pending |
-| MIG-04 | 4 | Pending |
-| MIG-05 | 4 | Pending |
-| MIG-06 | 4 | Pending |
-| MIG-07 | 4 | Pending |
-| ERR-01 | 2 | Pending |
-| ERR-02 | 2 | Pending |
-| ERR-03 | 2 | Pending |
-| ERR-04 | 2 | Pending |
-| TEST-01 | 2 | Pending |
-| TEST-02 | 1 | Pending |
-| TEST-03 | 3 | Pending |
+| SESS-01 | 2 | Complete |
+| SESS-02 | 2 | Complete |
+| SESS-03 | 2 | Complete |
+| SESS-04 | 2 | Complete |
+| SESS-05 | 2 | Complete |
+| SESS-06 | 2 | Complete |
+| SESS-07 | 2 | Complete |
+| SESS-08 | 2 | Complete |
+| SESS-09 | 2 | Complete |
+| SESS-10 | 2 | Complete |
+| SESS-11 | 2 | Complete |
+| SESS-12 | 2 | Complete |
+| SESS-13 | 2 | Complete |
+| SESS-14 | 2 | Complete |
+| SESS-15 | 1 | Complete |
+| DATA-01 | 1 | Complete |
+| DATA-02 | 1 | Complete |
+| DATA-03 | 1 | Complete |
+| DATA-04 | 1 | Complete |
+| DATA-05 | 1 | Complete |
+| DATA-06 | 1 | Complete |
+| DATA-07 | 1 | Complete |
+| MEM-01 | 3 | Complete |
+| MEM-02 | 3 | Complete |
+| MEM-03 | 3 | Complete |
+| MEM-04 | 3 | Complete |
+| MEM-05 | 3 | Complete |
+| MEM-06 | 3 | Complete |
+| MEM-07 | 3 | Complete |
+| MIG-01 | 4 | Complete |
+| MIG-02 | 4 | Complete |
+| MIG-03 | 4 | Complete |
+| MIG-04 | 4 | Complete |
+| MIG-05 | 4 | Complete |
+| MIG-06 | 4 | Complete |
+| MIG-07 | 4 | Complete |
+| ERR-01 | 2 | Complete |
+| ERR-02 | 2 | Complete |
+| ERR-03 | 2 | Complete |
+| ERR-04 | 2 | Complete |
+| TEST-01 | 2 | Complete |
+| TEST-02 | 1 | Complete |
+| TEST-03 | 3 | Complete |
 | TEST-04 | 4 | Complete |
-| TEST-05 | 5 | Pending |
-| TEST-06 | 1 | Pending |
-| TEST-07 | 1 | Pending |
-| TEST-08 | 7 | Pending |
-| CODE-01 | 5 | Pending |
-| CODE-02 | 1 | Pending |
-| CODE-03 | 2 | Pending |
-| CODE-04 | 2 | Pending |
-| CODE-05 | 3 | Pending |
+| TEST-05 | 5 | Complete |
+| TEST-06 | 1 | Complete |
+| TEST-07 | 1 | Complete |
+| TEST-08 | 7 | Complete |
+| CODE-01 | 5 | Complete |
+| CODE-02 | 1 | Complete |
+| CODE-03 | 2 | Complete |
+| CODE-04 | 2 | Complete |
+| CODE-05 | 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 48 total
@@ -170,4 +170,4 @@
 
 ---
 *Requirements defined: 2026-03-20*
-*Last updated: 2026-03-20 after initial definition*
+*Last updated: 2026-03-21 — все 48 требований переведены в Complete (план 07-01)*
