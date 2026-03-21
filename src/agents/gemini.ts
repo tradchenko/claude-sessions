@@ -3,7 +3,7 @@
  * Sessions are stored as git repositories in ~/.gemini/history/{project}/
  */
 
-import { existsSync, readdirSync, statSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import type { Session } from '../sessions/loader.js';
@@ -12,6 +12,7 @@ import { HOME, PLATFORM, formatDate } from '../core/config.js';
 import { AdapterError } from '../core/errors.js';
 import type { AgentInfo, AgentLoadOptions } from './types.js';
 import { BaseAgentAdapter } from './base-adapter.js';
+import { safeReaddir } from '../utils/fs.js';
 
 /** Gemini CLI home directory */
 const GEMINI_DIR = join(HOME, '.gemini');
@@ -87,25 +88,31 @@ function getLastCommitMessage(repoPath: string): string {
 function scanProjects(): Array<{ name: string; path: string; lastTs: number; commitMsg: string }> {
    if (!existsSync(HISTORY_DIR)) return [];
 
-   const entries = readdirSync(HISTORY_DIR, { withFileTypes: true });
+   const readdirResult = safeReaddir(HISTORY_DIR);
+   if (!readdirResult.ok) return [];
+
    const projects: Array<{ name: string; path: string; lastTs: number; commitMsg: string }> = [];
 
-   for (const entry of entries) {
-      if (!entry.isDirectory()) continue;
+   for (const name of readdirResult.data) {
+      const projectPath = join(HISTORY_DIR, name);
+      try {
+         if (!statSync(projectPath).isDirectory()) continue;
+      } catch {
+         continue;
+      }
 
-      const projectPath = join(HISTORY_DIR, entry.name);
       const lastTs = getLastCommitTimestamp(projectPath);
 
       if (lastTs !== null) {
          const commitMsg = getLastCommitMessage(projectPath);
-         projects.push({ name: entry.name, path: projectPath, lastTs, commitMsg });
+         projects.push({ name, path: projectPath, lastTs, commitMsg });
          continue;
       }
 
       // Fallback: use directory mtime if no git commits
       try {
          const stat = statSync(projectPath);
-         projects.push({ name: entry.name, path: projectPath, lastTs: stat.mtimeMs, commitMsg: '' });
+         projects.push({ name, path: projectPath, lastTs: stat.mtimeMs, commitMsg: '' });
       } catch {
          // Skip inaccessible directories
       }
