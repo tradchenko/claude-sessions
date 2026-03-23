@@ -3,7 +3,7 @@
  * Sessions are stored as git repositories in ~/.gemini/history/{project}/
  */
 
-import { existsSync, statSync } from 'fs';
+import { existsSync, statSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { execSync } from 'child_process';
 import type { Session } from '../sessions/loader.js';
@@ -19,6 +19,9 @@ const GEMINI_DIR = join(HOME, '.gemini');
 
 /** Project history directory */
 const HISTORY_DIR = join(GEMINI_DIR, 'history');
+
+/** Session storage directory (actual session files) */
+const TMP_DIR = join(GEMINI_DIR, 'tmp');
 
 /** Instructions file name */
 const INSTRUCTIONS_FILENAME = 'GEMINI.md';
@@ -80,6 +83,37 @@ function getLastCommitMessage(repoPath: string): string {
    } catch {
       return '';
    }
+}
+
+/**
+ * Находит UUID последней сессии для проекта в ~/.gemini/tmp/{project}/chats/.
+ * Возвращает sessionId (UUID) или null если сессий нет.
+ */
+function findLatestSessionId(projectName: string): string | null {
+   const chatsDir = join(TMP_DIR, projectName, 'chats');
+   if (!existsSync(chatsDir)) return null;
+
+   try {
+      const files = readdirSync(chatsDir)
+         .filter((f) => f.startsWith('session-') && f.endsWith('.json'))
+         .sort()
+         .reverse(); // Сортировка по timestamp в имени — последний первый
+
+      for (const file of files) {
+         try {
+            const content = readFileSync(join(chatsDir, file), 'utf8');
+            const data = JSON.parse(content) as { sessionId?: string; kind?: string };
+            // Пропускаем sub-agent сессии
+            if (data.kind === 'subagent') continue;
+            if (data.sessionId) return data.sessionId;
+         } catch {
+            continue;
+         }
+      }
+   } catch {
+      // Директория недоступна
+   }
+   return null;
 }
 
 /**
@@ -147,7 +181,7 @@ export class GeminiAdapter extends BaseAgentAdapter {
          cliBin,
          instructionsFile: INSTRUCTIONS_FILENAME,
          hooksSupport: true,
-         resumeSupport: false,
+         resumeSupport: true,
       };
    }
 
@@ -200,11 +234,8 @@ export class GeminiAdapter extends BaseAgentAdapter {
 
    /**
     * Формирует команду для возобновления сессии Gemini.
-    * Gemini sessions = git commits, id = "gemini-{projectName}".
-    * Gemini CLI не поддерживает --resume нативно.
-    * Если binary не найден → AGENT_NOT_INSTALLED.
-    * Если project directory не существует → SESSION_NOT_FOUND.
-    * Иначе → открываем gemini в директории проекта.
+    * Gemini sessions = "gemini-{projectName}", реальные сессии в ~/.gemini/tmp/{project}/chats/.
+    * Gemini CLI поддерживает --resume <sessionId|latest|index>.
     */
    getResumeCommand(sessionId: string): string[] | null {
       const bin = findGeminiBin();
@@ -218,6 +249,14 @@ export class GeminiAdapter extends BaseAgentAdapter {
       }
       // sessionId = "gemini-{projectName}" — извлекаем имя проекта
       const projectName = sessionId.startsWith('gemini-') ? sessionId.slice(7) : sessionId;
+
+      // Ищем UUID последней сессии в ~/.gemini/tmp/{project}/chats/
+      const realSessionId = findLatestSessionId(projectName);
+      if (realSessionId) {
+         return [bin, '--resume', realSessionId];
+      }
+
+      // Fallback: проверяем history directory
       const projectHistoryPath = join(HISTORY_DIR, projectName);
       if (!existsSync(projectHistoryPath)) {
          throw new AdapterError({
@@ -227,11 +266,14 @@ export class GeminiAdapter extends BaseAgentAdapter {
             suggestion: `Убедитесь что директория ~/.gemini/history/${projectName} существует`,
          });
       }
-      // Открываем gemini в директории проекта (projectHistoryPath — это git-репо с историей)
+      // Нет сессий в chats, но history существует — запускаем без --resume
       return [bin];
    }
 
-   // isSessionAlive: базовая реализация (false) подходит, Gemini не поддерживает resume
+   isSessionAlive(sessionId: string): boolean {
+      const projectName = sessionId.startsWith('gemini-') ? sessionId.slice(7) : sessionId;
+      return findLatestSessionId(projectName) !== null;
+   }
 
    /**
     * Path to GEMINI.md for memory injection

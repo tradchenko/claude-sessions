@@ -1,9 +1,9 @@
 // Migration: import old session index format into new MemoryIndex format
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { readIndex, writeIndex } from './index.js';
 import { extractL0FromJSONL } from './extract-l0.js';
 import type { MemoryIndex } from './types.js';
+import { readIndex, writeIndex } from './index.js';
 
 /** Entry from the old index format */
 interface OldIndexEntry {

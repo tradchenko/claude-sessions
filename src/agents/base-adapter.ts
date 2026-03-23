@@ -2,8 +2,8 @@
  * Абстрактный базовый класс для адаптеров агентов с DI файловой системы
  */
 
-import type { AgentAdapter, AgentId, AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import type { Session } from '../sessions/loader.js';
+import type { AgentAdapter, AgentId, AgentInfo, AgentLoadOptions, FsDeps } from './types.js';
 import { AdapterError, AdapterErrorCode, defaultFsDeps } from './errors.js';
 
 /** Абстрактный базовый адаптер агента с DI зависимостями */

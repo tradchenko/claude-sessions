@@ -66,38 +66,26 @@ describe('ClaudeAdapter.getResumeCommand', () => {
 // ─── Codex ───────────────────────────────────────────────────────────────────
 
 describe('CodexAdapter.getResumeCommand', () => {
-   it('если codex binary найден → бросает AdapterError RESUME_NOT_SUPPORTED', () => {
+   it('если codex установлен → возвращает [cli, "resume"]', () => {
       const adapter = new CodexAdapter();
-      // Если codex установлен — ожидаем RESUME_NOT_SUPPORTED
-      // Если не установлен — ожидаем AGENT_NOT_INSTALLED
-      try {
-         adapter.getResumeCommand('test-session-id');
-         assert.fail('должен был бросить AdapterError');
-      } catch (e) {
-         assert.ok(e instanceof AdapterError, 'должен быть AdapterError');
-         assert.ok(
-            e.code === 'RESUME_NOT_SUPPORTED' || e.code === 'AGENT_NOT_INSTALLED',
-            `код должен быть RESUME_NOT_SUPPORTED или AGENT_NOT_INSTALLED, получили: ${e.code}`,
+      const info = adapter.detect();
+      if (info?.cliBin) {
+         const cmd = adapter.getResumeCommand('test-session-id');
+         assert.ok(Array.isArray(cmd), 'должен вернуть массив');
+         assert.equal(cmd[1], 'resume', 'подкоманда resume');
+      }
+      // Если не установлен — пропускаем
+   });
+
+   it('если codex не установлен → AGENT_NOT_INSTALLED', () => {
+      const adapter = new CodexAdapter();
+      const info = adapter.detect();
+      if (!info) {
+         assert.throws(
+            () => adapter.getResumeCommand('any-session-id'),
+            (e) => e instanceof AdapterError && e.code === 'AGENT_NOT_INSTALLED',
          );
       }
-   });
-
-   it('всегда бросает AdapterError (никогда не возвращает null)', () => {
-      const adapter = new CodexAdapter();
-      assert.throws(
-         () => adapter.getResumeCommand('any-session-id'),
-         (e) => e instanceof AdapterError,
-      );
-   });
-
-   it('suggestion содержит restore для RESUME_NOT_SUPPORTED', () => {
-      const adapter = new CodexAdapter();
-      try {
-         adapter.getResumeCommand('test-session-id');
-      } catch (e) {
-         if (e instanceof AdapterError && e.code === 'RESUME_NOT_SUPPORTED') {
-            assert.ok(e.suggestion.toLowerCase().includes('restore'), `suggestion должен упоминать restore: "${e.suggestion}"`);
-         }
-      }
+      // Если установлен — пропускаем
    });
 });

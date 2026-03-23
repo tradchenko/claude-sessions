@@ -2,11 +2,11 @@
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync, writeFileSync, appendFileSync, mkdirSync, existsSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
-import { readIndex, writeIndex, acquireLock, releaseLock } from './index.js';
 import { resolveCandidate } from './dedup.js';
 import { serializeMemory } from './format.js';
 import { readMemoryConfig } from './config.js';
 import type { ChatMessage, MemoryCandidate, MemoryCategory, MemoryEntry } from './types.js';
+import { readIndex, writeIndex, acquireLock, releaseLock } from './index.js';
 
 /** Supported agent identifiers for session file discovery */
 type AgentId = 'claude' | 'codex' | 'qwen' | 'companion' | 'gemini';

@@ -83,25 +83,14 @@ describe('ClaudeAdapter.getResumeCommand', () => {
 // ─── CodexAdapter.getResumeCommand ───────────────────────────────────────────
 
 describe('CodexAdapter.getResumeCommand', () => {
-   it('всегда бросает AdapterError (RESUME_NOT_SUPPORTED или AGENT_NOT_INSTALLED)', () => {
-      const adapter = new CodexAdapter();
-      try {
-         adapter.getResumeCommand('any-session-id');
-         assert.fail('должен был бросить AdapterError');
-      } catch (e) {
-         assert.ok(e instanceof AdapterError, `Ожидался AdapterError, получен: ${e?.constructor?.name}`);
-         assert.ok(
-            e.code === 'RESUME_NOT_SUPPORTED' || e.code === 'AGENT_NOT_INSTALLED',
-            `Ожидался RESUME_NOT_SUPPORTED или AGENT_NOT_INSTALLED, получен: ${e.code}`,
-         );
-      }
-   });
-
-   it('если codex установлен → RESUME_NOT_SUPPORTED', () => {
+   it('если codex установлен → возвращает команду с `codex resume`', () => {
       const adapter = new CodexAdapter();
       const info = adapter.detect();
       if (info?.cliBin) {
-         assertAdapterError(() => adapter.getResumeCommand('any-session'), 'RESUME_NOT_SUPPORTED');
+         const cmd = adapter.getResumeCommand('any-session-id');
+         assert.ok(Array.isArray(cmd), 'должен вернуть массив');
+         assert.ok(cmd.length >= 2, 'массив должен содержать бинарник и подкоманду');
+         assert.equal(cmd[1], 'resume', 'вторым элементом должна быть подкоманда resume');
       }
       // Если не установлен — тест не применим, пропускаем
    });
@@ -113,20 +102,6 @@ describe('CodexAdapter.getResumeCommand', () => {
          assertAdapterError(() => adapter.getResumeCommand('any-session'), 'AGENT_NOT_INSTALLED');
       }
       // Если установлен — тест не применим, пропускаем
-   });
-
-   it('RESUME_NOT_SUPPORTED suggestion упоминает restore', () => {
-      const adapter = new CodexAdapter();
-      try {
-         adapter.getResumeCommand('any-session-id');
-      } catch (e) {
-         if (e instanceof AdapterError && e.code === 'RESUME_NOT_SUPPORTED') {
-            assert.ok(
-               e.suggestion.toLowerCase().includes('restore'),
-               `suggestion должен упоминать restore: "${e.suggestion}"`,
-            );
-         }
-      }
    });
 });
 

@@ -14,7 +14,6 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { spawnSync } from 'child_process';
 import { readFileSync } from 'fs';
-
 import { readIndex, writeIndex } from '../memory/index.js';
 import { MEMORY_INDEX, PROJECTS_DIR, findSessionJsonl } from '../core/config.js';
 import { checkPendingExtractions } from '../sessions/loader.js';

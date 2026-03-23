@@ -6,12 +6,12 @@
 import { readFileSync, writeFileSync, renameSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CURRENT_SCHEMA_VERSION } from './types.js';
-import type { MetaJson, MigrationContext, Migration, MigrationResult } from './types.js';
-import { backupFile, cleanupOldBackups } from './backup.js';
 import { migrateSessionIndex, generateL0ForExistingSessions } from '../memory/migrate.js';
 import { writeIndex } from '../memory/index.js';
 import { t } from '../core/i18n/index.js';
+import { CURRENT_SCHEMA_VERSION } from './types.js';
+import type { MetaJson, MigrationContext, Migration, MigrationResult } from './types.js';
+import { backupFile, cleanupOldBackups } from './backup.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(__dirname, '..', '..');

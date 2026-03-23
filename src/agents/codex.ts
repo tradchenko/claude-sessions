@@ -217,9 +217,8 @@ export class CodexAdapter extends BaseAgentAdapter {
 
    /**
     * Формирует команду для возобновления сессии Codex.
-    * Codex CLI не поддерживает --resume нативно, а history.jsonl не хранит projectPath.
-    * Если binary не найден → бросаем AdapterError.agentNotInstalled.
-    * Иначе → бросаем AdapterError.resumeNotSupported с предложением использовать restore.
+    * Codex CLI поддерживает `codex resume` (подкоманда, не флаг).
+    * Без аргументов показывает picker, --last возобновляет последнюю.
     */
    getResumeCommand(_sessionId: string): string[] | null {
       const cli = findCodexCli();
@@ -231,12 +230,8 @@ export class CodexAdapter extends BaseAgentAdapter {
             suggestion: 'Установите codex и убедитесь что бинарник доступен в PATH',
          });
       }
-      throw new AdapterError({
-         code: 'RESUME_NOT_SUPPORTED',
-         message: 'Agent "codex" does not support session resume',
-         agentName: 'codex',
-         suggestion: "Use 'restore' to recover session context",
-      });
+      // Codex resume — подкоманда. Открывает встроенный picker Codex для выбора сессии.
+      return [cli, 'resume'];
    }
 
    isSessionAlive(sessionId: string): boolean {

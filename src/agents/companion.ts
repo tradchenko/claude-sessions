@@ -10,13 +10,12 @@
 import { existsSync, readdirSync, createReadStream } from 'fs';
 import { join } from 'path';
 import { createInterface } from 'readline';
-
-import type { AgentAdapter, AgentId, AgentInfo, AgentLoadOptions } from './types.js';
 import type { Session } from '../sessions/loader.js';
 import { HOME, formatDate, shortProjectName, SNAPSHOTS_DIR } from '../core/config.js';
 import { readSessionIndex } from '../sessions/loader.js';
 import { safeReadJson } from '../utils/index.js';
 import { AdapterError } from '../core/errors.js';
+import type { AgentAdapter, AgentId, AgentInfo, AgentLoadOptions } from './types.js';
 import { ClaudeAdapter } from './claude.js';
 import { CodexAdapter } from './codex.js';
 import { QwenAdapter } from './qwen.js';
