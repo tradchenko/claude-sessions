@@ -1,6 +1,6 @@
 # claude-sessions
 
-> **v2.1.0** — session snapshots, integrity indicators, cleanup command
+> **v2.3.0** — session snapshots, integrity indicators, cleanup command
 
 Multi-agent session manager for AI coding assistants. Browse, search, resume, and manage sessions across **Claude Code**, **Codex CLI**, **Qwen Code**, and **Gemini CLI** from a single TUI. Includes a shared memory system that extracts and organizes knowledge from all your coding sessions.
 
@@ -209,14 +209,14 @@ src/
     └── server.ts              — MCP server (stdio JSON-RPC)
 ```
 
-40 TypeScript source files. Compiled JS shipped in `dist/`. Zero runtime dependencies.
+61 TypeScript source files. Compiled JS shipped in `dist/`. Zero runtime dependencies.
 
 ## Development
 
 ```bash
 npm install          # install devDependencies (typescript, @types/node)
 npm run build        # compile TypeScript → dist/
-npm test             # run all tests (379 tests across 103 suites)
+npm test             # run all tests (376 tests across 103 suites)
 npm link             # link for local testing
 ```
 

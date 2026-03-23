@@ -2,3 +2,10 @@ node_modules/
 dist/
 .worktrees/
 node-compile-cache/
+
+# Локальная документация (не для репозитория)
+.planning/
+docs/superpowers/
+claude-commands/
+AUDIT-REPORT.md
+CLAUDE.md
