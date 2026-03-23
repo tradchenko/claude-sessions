@@ -15,7 +15,7 @@ import { t } from '../core/i18n/index.js';
 /** Найти все недоступные сессии (нет JSONL и нет snapshot) */
 async function findOrphanedSessions(): Promise<Session[]> {
    const all = await loadSessions({ limit: 1000 });
-   return all.filter((s) => s.hasJsonl === false && !s.hasSnapshot);
+   return all.filter((s) => !s.hasJsonl && !s.hasSnapshot);
 }
 
 /** Удалить записи сессий из history.jsonl и session-index.json */
