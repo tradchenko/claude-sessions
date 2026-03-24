@@ -4,7 +4,7 @@
 
 import type { Session } from '../sessions/loader.js';
 
-/** Зависимости файловой системы для DI в адаптерах */
+/** Filesystem dependencies for DI in adapters */
 export interface FsDeps {
    readFile(path: string, encoding: BufferEncoding): Promise<string>;
    readdir(path: string, options: { withFileTypes: true }): Promise<import('fs').Dirent[]>;
@@ -55,8 +55,11 @@ export interface AgentAdapter {
    /** Returns path to instructions file for memory injection */
    getInstructionsPath(): string | null;
 
-   /** Возвращает команду для открытия сессии в UI (десктоп/веб). Null если не поддерживается. */
+   /** Returns command to open session in UI (desktop/web). Null if not supported. */
    getOpenInUiCommand?(sessionId: string): string[] | null;
+
+   /** Deletes session from adapter storage. Returns number of removed files/records. */
+   deleteSession?(sessionId: string): number;
 }
 
 /** Session loading options */

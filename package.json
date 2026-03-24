@@ -1,6 +1,6 @@
 {
   "name": "@tradchenko/claude-sessions",
-  "version": "2.3.1",
+  "version": "2.3.2",
   "description": "Multi-agent session manager — TUI picker, search, AI summaries, shared memory system for Claude, Codex, Qwen, Gemini",
   "type": "module",
   "bin": {

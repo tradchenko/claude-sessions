@@ -182,11 +182,12 @@ class SessionPicker {
         const label = AGENT_LABELS[s.agent] || s.agent.slice(0, 3).toUpperCase();
         const color = AGENT_COLORS[s.agent] || DIM;
         const via = s.viaCompanion ? " [C]" : "";
-        // Индикатор целостности: ⚠ нет JSONL и snapshot, [S] только snapshot
+        // Integrity indicator: [!] no data, [S] snapshot only
+        // hasJsonl === undefined means "not checked" (Companion, Gemini) — skip [!]
         const integrity =
-          s.agent === "claude" && !s.hasJsonl && !s.hasSnapshot
+          s.hasJsonl === false && !s.hasSnapshot
             ? ` ${RED}[!]${RESET}`
-            : s.agent === "claude" && !s.hasJsonl && s.hasSnapshot
+            : s.hasJsonl === false && s.hasSnapshot
               ? ` ${YELLOW}[S]${RESET}`
               : "";
         // Длина без ANSI-кодов для расчёта ширины
