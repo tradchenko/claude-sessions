@@ -36,11 +36,26 @@ interface MemoryEntry {
    hotness?: number;
 }
 
+/** L0 data from session */
+interface L0Data {
+   summary?: string;
+   failures?: string[];
+   next_step?: string;
+   git_status?: string;
+}
+
+/** Session entry */
+interface SessionEntry {
+   lastActive?: number;
+   l0?: L0Data;
+   [key: string]: unknown;
+}
+
 /** Memory index */
 interface MemoryIndex {
    version?: number;
    memories: Record<string, MemoryEntry>;
-   sessions: Record<string, unknown>;
+   sessions: Record<string, SessionEntry>;
 }
 
 /** Context for hotness calculation */
@@ -114,12 +129,41 @@ function selectHotMemories(index: MemoryIndex, currentProject: string, count = 5
       .slice(0, count);
 }
 
+/** Находит последнюю сессию для проекта с L0 данными */
+function findLastSessionForProject(index: MemoryIndex, currentProject: string): SessionEntry | undefined {
+   const sessions = Object.values(index.sessions || {});
+   return sessions.filter((s) => s.l0 && (s as { l0?: { project?: string } }).l0?.project === currentProject).sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0))[0];
+}
+
 /** Formats output for SessionStart hook */
 function formatSessionStartOutput(index: MemoryIndex, currentProject: string): string {
    const catalog = generateCatalog(index);
    const hot = selectHotMemories(index, currentProject, 5);
 
    let output = `# Session Memory (auto-loaded)\n\n## Memory Catalog\n${catalog}\n`;
+
+   // Показать failures и next_step из последней сессии проекта
+   const lastSession = findLastSessionForProject(index, currentProject);
+   if (lastSession?.l0) {
+      const l0 = lastSession.l0;
+      const hasContext = l0.failures?.length || l0.next_step || l0.git_status;
+      if (hasContext) {
+         output += `\n## Previous Session Context\n\n`;
+         if (l0.next_step) {
+            output += `**Next step:** ${l0.next_step}\n\n`;
+         }
+         if (l0.failures?.length) {
+            output += `**What didn't work:**\n`;
+            for (const f of l0.failures.slice(0, 5)) {
+               output += `- ${f}\n`;
+            }
+            output += '\n';
+         }
+         if (l0.git_status) {
+            output += `**Git status (at session end):**\n\`\`\`\n${l0.git_status}\n\`\`\`\n\n`;
+         }
+      }
+   }
 
    if (hot.length > 0) {
       output += `\n## Hot Memories for ${currentProject || 'global'}\n\n`;

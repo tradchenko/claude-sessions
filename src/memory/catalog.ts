@@ -1,5 +1,5 @@
 // Catalog generation and hot memory selection for session start loading
-import type { MemoryEntry, MemoryIndex } from './types.js';
+import type { MemoryEntry, MemoryIndex, SessionMeta } from './types.js';
 
 export function generateCatalog(index: MemoryIndex): string {
    const entries = Object.values(index.memories || {}).sort((a, b) => (b.hotness || 0) - (a.hotness || 0));
@@ -20,10 +20,40 @@ export function selectHotMemories(index: MemoryIndex, currentProject: string, co
       .slice(0, count);
 }
 
+/** Находит последнюю сессию для проекта с L0 данными */
+function findLastSessionForProject(index: MemoryIndex, currentProject: string): SessionMeta | undefined {
+   const sessions = Object.values(index.sessions || {});
+   return sessions.filter((s) => s.l0 && s.l0.project === currentProject).sort((a, b) => (b.lastActive || 0) - (a.lastActive || 0))[0];
+}
+
 export function formatSessionStartOutput(index: MemoryIndex, currentProject: string): string {
    const catalog = generateCatalog(index);
    const hot = selectHotMemories(index, currentProject, 5);
    let output = `# Session Memory (auto-loaded)\n\n## Memory Catalog\n${catalog}\n`;
+
+   // Показать failures и next_step из последней сессии проекта
+   const lastSession = findLastSessionForProject(index, currentProject);
+   if (lastSession?.l0) {
+      const l0 = lastSession.l0;
+      const hasContext = l0.failures?.length || l0.next_step || l0.git_status;
+      if (hasContext) {
+         output += `\n## Previous Session Context\n\n`;
+         if (l0.next_step) {
+            output += `**Next step:** ${l0.next_step}\n\n`;
+         }
+         if (l0.failures?.length) {
+            output += `**What didn't work:**\n`;
+            for (const f of l0.failures.slice(0, 5)) {
+               output += `- ${f}\n`;
+            }
+            output += '\n';
+         }
+         if (l0.git_status) {
+            output += `**Git status (at session end):**\n\`\`\`\n${l0.git_status}\n\`\`\`\n\n`;
+         }
+      }
+   }
+
    const MAX_HOT_CONTENT_CHARS = 3000; // ~1000 tokens
    let hotContentLen = 0;
    if (hot.length > 0) {

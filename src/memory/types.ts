@@ -46,6 +46,14 @@ export interface L0Data {
    commands?: string[];
    /** Строки ошибок из сессии */
    errors?: string[];
+   /** Неудачные подходы: что пробовали и почему не сработало */
+   failures?: string[];
+   /** Следующий шаг: что делать при возобновлении работы */
+   next_step?: string;
+   /** Снимок git status на момент завершения сессии */
+   git_status?: string;
+   /** Принятые решения с обоснованием */
+   decisions?: string[];
 }
 
 /** Memory index — root structure of index.json */
@@ -79,10 +87,7 @@ export interface MemoryCandidate {
 }
 
 /** Match result during deduplication */
-export type MatchResult =
-   | { type: 'exact'; key: string; existing: MemoryEntry }
-   | { type: 'fuzzy'; key: string; existing: MemoryEntry; similarity: number }
-   | { type: 'none' };
+export type MatchResult = { type: 'exact'; key: string; existing: MemoryEntry } | { type: 'fuzzy'; key: string; existing: MemoryEntry; similarity: number } | { type: 'none' };
 
 /** Candidate resolution result during deduplication */
 export type ResolutionResult =

@@ -8,7 +8,7 @@
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { homedir } from 'os';
-import { spawn } from 'node:child_process';
+import { spawn, execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'url';
 
 // Determine package root — works from both src/ and ~/.claude/scripts/
@@ -29,6 +29,10 @@ interface L0Result {
    files: string[];
    topics?: string[];
    timestamp?: number;
+   failures?: string[];
+   next_step?: string;
+   git_status?: string;
+   decisions?: string[];
 }
 
 /** Message from JSONL */
@@ -58,6 +62,20 @@ interface SaveSessionParams {
    indexPath: string;
    projectsDir: string;
    memoryDir?: string;
+}
+
+/** Собирает снимок git status для текущего проекта */
+function collectGitStatus(cwd: string): string | undefined {
+   try {
+      const status = execFileSync('git', ['status', '--short'], { cwd, encoding: 'utf8', timeout: 5000 });
+      const diffStat = execFileSync('git', ['diff', '--stat'], { cwd, encoding: 'utf8', timeout: 5000 });
+      const parts: string[] = [];
+      if (status.trim()) parts.push('Modified:\n' + status.trim());
+      if (diffStat.trim()) parts.push('Diff stat:\n' + diffStat.trim());
+      return parts.length > 0 ? parts.join('\n').slice(0, 500) : undefined;
+   } catch {
+      return undefined;
+   }
 }
 
 /** Session entry in unified index */
@@ -112,14 +130,20 @@ function inlineExtractL0FromJSONL(lines: string[], project: string): L0Result {
             const text =
                typeof event.message.content === 'string'
                   ? event.message.content
-                  : (event.message.content as ContentBlock[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+                  : (event.message.content as ContentBlock[])
+                       .filter((b) => b.type === 'text')
+                       .map((b) => b.text ?? '')
+                       .join(' ');
             messages.push({ role: 'user', content: text });
          }
          if (event.type === 'assistant' && event.message?.content) {
             const text =
                typeof event.message.content === 'string'
                   ? event.message.content
-                  : (event.message.content as ContentBlock[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+                  : (event.message.content as ContentBlock[])
+                       .filter((b) => b.type === 'text')
+                       .map((b) => b.text ?? '')
+                       .join(' ');
             messages.push({ role: 'assistant', content: text });
          }
       } catch {
@@ -132,13 +156,47 @@ function inlineExtractL0FromJSONL(lines: string[], project: string): L0Result {
    const firstUser = messages.find((m) => m.role === 'user');
    const summary = firstUser ? firstUser.content.replace(/\n/g, ' ').trim().slice(0, MAX_SUMMARY_LEN) : '';
 
+   // Паттерны для извлечения неудачных подходов
+   const FAILURE_PATTERNS = [
+      /(?:не сработал[оа]?|didn'?t work|not work|does not work)[^.]*[.!]/gim,
+      /(?:откатил|reverted?|rolled? back)[^.]*[.!]/gim,
+      /(?:не помогло|не решило|didn'?t help|didn'?t fix)[^.]*[.!]/gim,
+      /(?:пробовал[аи]?\s+[^,.]+,?\s*но)[^.]*[.!]/gim,
+      /(?:tried\s+[^,.]+,?\s*but)[^.]*[.!]/gim,
+   ];
+
    const files = new Set<string>();
+   const failures = new Set<string>();
    for (const msg of messages) {
       const t = typeof msg.content === 'string' ? msg.content : '';
       for (const f of inlineExtractFilePaths(t)) files.add(f);
+      // Извлечь неудачные подходы
+      for (const pattern of FAILURE_PATTERNS) {
+         pattern.lastIndex = 0;
+         for (const m of t.matchAll(pattern)) {
+            const fl = m[0]?.trim();
+            if (fl && fl.length > 15) failures.add(fl.slice(0, 200));
+         }
+      }
    }
 
-   return { summary, project, messageCount: messages.length, files: [...files].slice(0, 20), timestamp: Date.now() };
+   // Извлечь следующий шаг из последнего ответа ассистента
+   let next_step: string | undefined;
+   const lastAssistant = [...messages].reverse().find((m) => m.role === 'assistant');
+   if (lastAssistant) {
+      const match = lastAssistant.content.match(/(?:следующий шаг|next step|далее нужно|теперь нужно|осталось)[:\s]+(.{20,200})/i);
+      if (match?.[1]) next_step = match[1].trim().slice(0, 200);
+   }
+
+   return {
+      summary,
+      project,
+      messageCount: messages.length,
+      files: [...files].slice(0, 20),
+      timestamp: Date.now(),
+      failures: failures.size > 0 ? [...failures].slice(0, 10) : undefined,
+      next_step,
+   };
 }
 
 /** Read unified index (inline version for standalone operation) */
@@ -183,6 +241,9 @@ export function saveSessionWithL0({ sessionId, project, indexPath, projectsDir, 
    if (jsonlPath) {
       const lines = readFileSync(jsonlPath, 'utf8').split('\n').filter(Boolean).slice(-50);
       const l0 = extractL0(lines, project);
+      // Добавить снимок git status
+      const gitStatus = collectGitStatus(project);
+      if (gitStatus) l0.git_status = gitStatus;
       index.sessions[sessionId] = {
          ...index.sessions[sessionId],
          l0,
@@ -201,9 +262,7 @@ export function saveSessionWithL0({ sessionId, project, indexPath, projectsDir, 
    // Сохраняем snapshot для восстановления если JSONL будет удалён
    if (jsonlPath) {
       try {
-         import('../memory/snapshot.js')
-            .then(({ saveSessionSnapshot }) => saveSessionSnapshot(sessionId, jsonlPath, project))
-            .catch(() => {});
+         import('../memory/snapshot.js').then(({ saveSessionSnapshot }) => saveSessionSnapshot(sessionId, jsonlPath, project)).catch(() => {});
       } catch {
          /* snapshot не критичен */
       }

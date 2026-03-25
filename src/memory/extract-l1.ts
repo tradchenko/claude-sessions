@@ -45,9 +45,14 @@ Categories:
 - profile: user role, expertise, responsibilities
 - preferences: coding style, tools, workflow
 - entities: projects, services, people, systems
-- events: incidents, deployments, decisions (with dates)
-- cases: problem + solution pairs
+- events: incidents, deployments, decisions (with dates and reasoning)
+- cases: problem + solution pairs (IMPORTANT: also extract FAILED approaches — what was tried and why it didn't work, so future sessions don't repeat the same mistakes)
 - patterns: recurring approaches, anti-patterns
+
+Pay special attention to:
+1. FAILED APPROACHES — if something was tried and didn't work, extract it as a "cases" memory with clear explanation of WHY it failed. This prevents wasting time retrying.
+2. DECISIONS — architectural or technical decisions with reasoning (why X was chosen over Y).
+3. NEXT STEPS — if work is incomplete, what should be done next.
 
 Only extract information worth remembering in future sessions. Skip trivial exchanges.
 If nothing is worth remembering, return an empty array [].
@@ -72,9 +77,12 @@ export function parseLLMResponse(response: string): MemoryCandidate[] {
          const obj = m as Record<string, unknown>;
          // Валидация схемы: category и name — непустые строки, content — непустая строка
          if (
-            typeof obj.category !== 'string' || !obj.category.trim() ||
-            typeof obj.name !== 'string' || !obj.name.trim() ||
-            typeof obj.content !== 'string' || !obj.content.trim()
+            typeof obj.category !== 'string' ||
+            !obj.category.trim() ||
+            typeof obj.name !== 'string' ||
+            !obj.name.trim() ||
+            typeof obj.content !== 'string' ||
+            !obj.content.trim()
          ) {
             // Невалидный кандидат — пропустить
             continue;
@@ -117,14 +125,20 @@ function extractMessagesFromJSONL(jsonlPath: string): ChatMessage[] {
             const text =
                typeof event.message.content === 'string'
                   ? event.message.content
-                  : (event.message.content as ContentBlock[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+                  : (event.message.content as ContentBlock[])
+                       .filter((b) => b.type === 'text')
+                       .map((b) => b.text ?? '')
+                       .join(' ');
             messages.push({ role: 'user', content: text.slice(0, 1000) });
          }
          if (event.type === 'assistant' && event.message?.content) {
             const text =
                typeof event.message.content === 'string'
                   ? event.message.content
-                  : (event.message.content as ContentBlock[]).filter((b) => b.type === 'text').map((b) => b.text ?? '').join(' ');
+                  : (event.message.content as ContentBlock[])
+                       .filter((b) => b.type === 'text')
+                       .map((b) => b.text ?? '')
+                       .join(' ');
             messages.push({ role: 'assistant', content: text.slice(0, 1500) });
          }
       } catch {
